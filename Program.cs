@@ -3,17 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using OfficeOpenXml;
 
 namespace ConsoleApp1
 {
     class Program
     {
-
+        [STAThread]
         static void Main(string[] args)
         {
             try
             {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+
                 // Load configuration
                 ConfigurationManager.LoadConfiguration();
                 var configuration = ConfigurationManager.Configuration;
@@ -27,15 +31,22 @@ namespace ConsoleApp1
                 }
                 else
                 {
-                    // Prompt user for file path
-                    Console.WriteLine("Enter the path to the calibration report file (CSV or Excel):");
-                    filePath = Console.ReadLine();
+                    // Show file dialog for file selection
+                    OpenFileDialog openFileDialog = new OpenFileDialog();
+                    openFileDialog.Title = "Select a Calibration Report File (CSV or Excel)";
+                    openFileDialog.Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx;*.xls)|*.xlsx;*.xls|All files (*.*)|*.*";
+
+                    if (openFileDialog.ShowDialog() != DialogResult.OK)
+                    {
+                        return;
+                    }
+
+                    filePath = openFileDialog.FileName;
                 }
 
                 if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 {
                     Console.WriteLine("Error: File not found or path is empty.");
-                    Console.WriteLine("Usage: ConsoleApp1.exe [filepath]");
                     Console.WriteLine("Press any key to exit...");
                     Console.ReadKey();
                     return;
