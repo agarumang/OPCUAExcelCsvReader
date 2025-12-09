@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OfficeOpenXml;
+using ExcelDataReader;
 
 namespace ConsoleApp1
 {
@@ -17,6 +18,9 @@ namespace ConsoleApp1
         {
             try
             {
+                // Register code page provider for ExcelDataReader (required for .xls files)
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
@@ -290,209 +294,263 @@ public class CalibrationDataExtractor
 
         private ExtractedCalibrationData ExtractFromExcel(string filePath)
         {
-        var data = new ExtractedCalibrationData();
-        
-        // Check if file is .xls format (old Excel format)
-        string extension = Path.GetExtension(filePath).ToLower();
-        if (extension == ".xls")
-        {
-            Console.WriteLine("⚠️ Warning: .xls files (Excel 97-2003 format) are not fully supported.");
-            Console.WriteLine("   Please convert the file to .xlsx format or save it as CSV.");
-            Console.WriteLine("   Attempting to read as CSV format instead...");
-            Console.WriteLine();
+            var data = new ExtractedCalibrationData();
+            string extension = Path.GetExtension(filePath).ToLower();
             
-            // Try to read as CSV as a fallback
             try
             {
-                return ExtractFromCsv(filePath);
-            }
-            catch (Exception csvEx)
-            {
-                Console.WriteLine($"❌ Error: Could not read .xls file as CSV either: {csvEx.Message}");
-                Console.WriteLine("   Solution: Please convert the .xls file to .xlsx format using Excel.");
-                return data;
-            }
-        }
-        
-        try
-        {
-            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-            
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
-            {
-                var worksheet = package.Workbook.Worksheets[0]; // Get first worksheet
-                
-                if (worksheet?.Dimension == null)
+                // Use ExcelDataReader for both .xls and .xlsx files
+                using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
                 {
-                    return data;
-                }
-                
-                // Iterate through all rows
-                for (int row = 1; row <= worksheet.Dimension.End.Row; row++)
-                {
-                    var rowData = new List<string>();
+                    IExcelDataReader reader;
                     
-                    // Get all cells in the row
-                    for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                    if (extension == ".xls")
                     {
-                        var cellValue = worksheet.Cells[row, col].Value?.ToString() ?? "";
-                        rowData.Add(cellValue);
+                        // For .xls files (Excel 97-2003)
+                        reader = ExcelReaderFactory.CreateBinaryReader(stream);
+                        Console.WriteLine("📖 Reading .xls file (Excel 97-2003 format)...");
+                    }
+                    else
+                    {
+                        // For .xlsx files (Excel 2007+)
+                        reader = ExcelReaderFactory.CreateOpenXmlReader(stream);
+                        Console.WriteLine("📖 Reading .xlsx file (Excel 2007+ format)...");
                     }
                     
-                    if (rowData.Count > 0)
+                    using (reader)
                     {
-                        // Check if row contains pipe separator
-                        var rowText = string.Join(",", rowData);
-                        var pipeIndex = rowText.IndexOf('|');
-                        var leftFields = new string[0];
-                        var rightFields = new string[0];
-
-                        if (pipeIndex >= 0)
+                        // Read the first worksheet
+                        var result = reader.AsDataSet();
+                        var table = result.Tables[0];
+                        
+                        if (table == null || table.Rows.Count == 0)
                         {
-                            var leftPart = rowText.Substring(0, pipeIndex);
-                            var rightPart = rowText.Substring(pipeIndex + 1);
-                            leftFields = ParseCsvLine(leftPart);
-                            rightFields = ParseCsvLine(rightPart);
+                            Console.WriteLine("⚠️ Warning: Excel file appears to be empty.");
+                            return data;
                         }
-                        else
-                        {
-                            leftFields = rowData.ToArray();
-                        }
-
-                        // Similar extraction logic as CSV
+                        
+                        // Track section states
+                        bool inZeroCellVolumeSection = false;
+                        bool inVolumeCalibrationSection = false;
                         bool zeroCellVolumeHeaderFound = false;
                         bool volumeCalibrationHeaderFound = false;
                         bool zeroCellVolumeReportFound = false;
                         bool volumeCalibrationReportFound = false;
-
-                        foreach (var field in leftFields)
+                        
+                        // Iterate through all rows
+                        for (int row = 0; row < table.Rows.Count; row++)
                         {
-                            if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
-                                zeroCellVolumeHeaderFound = true;
-                            if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
-                                zeroCellVolumeReportFound = true;
+                            var rowData = new List<string>();
+                            
+                            // Get all cells in the row
+                            for (int col = 0; col < table.Columns.Count; col++)
+                            {
+                                var cellValue = table.Rows[row][col]?.ToString() ?? "";
+                                rowData.Add(cellValue);
+                            }
+                            
+                            if (rowData.Count > 0)
+                            {
+                                // Check if row contains pipe separator
+                                var rowText = string.Join(",", rowData);
+                                var pipeIndex = rowText.IndexOf('|');
+                                var leftFields = new string[0];
+                                var rightFields = new string[0];
+
+                                if (pipeIndex >= 0)
+                                {
+                                    var leftPart = rowText.Substring(0, pipeIndex);
+                                    var rightPart = rowText.Substring(pipeIndex + 1);
+                                    leftFields = ParseCsvLine(leftPart);
+                                    rightFields = ParseCsvLine(rightPart);
+                                }
+                                else
+                                {
+                                    leftFields = rowData.ToArray();
+                                }
+
+                                // Check for section headers
+                                foreach (var field in leftFields)
+                                {
+                                    if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        zeroCellVolumeHeaderFound = true;
+                                        inZeroCellVolumeSection = true;
+                                        inVolumeCalibrationSection = false;
+                                    }
+                                    if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        zeroCellVolumeReportFound = true;
+                                    }
+                                }
+
+                                foreach (var field in rightFields)
+                                {
+                                    if (field.IndexOf("Volume Calibration Header", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        volumeCalibrationHeaderFound = true;
+                                        inVolumeCalibrationSection = true;
+                                        inZeroCellVolumeSection = false;
+                                    }
+                                    if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        volumeCalibrationReportFound = true;
+                                    }
+                                }
+
+                                // Extract Zero Cell Volume data (left side)
+                                if (inZeroCellVolumeSection || zeroCellVolumeHeaderFound)
+                                {
+                                    ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
+                                }
+
+                                // Extract Volume Calibration data (right side)
+                                if (inVolumeCalibrationSection || volumeCalibrationHeaderFound)
+                                {
+                                    ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
+                                }
+                            }
                         }
-
-                        foreach (var field in rightFields)
+                    }
+                }
+                
+                Console.WriteLine("✅ Excel file read successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error reading Excel file: {ex.Message}");
+                Console.WriteLine($"   File format: {extension}");
+                
+                // If ExcelDataReader fails, try EPPlus as fallback for .xlsx files only
+                if (extension == ".xlsx")
+                {
+                    Console.WriteLine("   Attempting fallback to EPPlus for .xlsx file...");
+                    try
+                    {
+                        return ExtractFromExcelWithEPPlus(filePath);
+                    }
+                    catch (Exception epPlusEx)
+                    {
+                        Console.WriteLine($"   ❌ EPPlus fallback also failed: {epPlusEx.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("   Attempting to read as CSV format as fallback...");
+                    try
+                    {
+                        return ExtractFromCsv(filePath);
+                    }
+                    catch (Exception csvEx)
+                    {
+                        Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
+                    }
+                }
+            }
+            
+            return data;
+        }
+        
+        // Fallback method using EPPlus for .xlsx files
+        private ExtractedCalibrationData ExtractFromExcelWithEPPlus(string filePath)
+        {
+            var data = new ExtractedCalibrationData();
+            
+            try
+            {
+                ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+                
+                using (var package = new ExcelPackage(new FileInfo(filePath)))
+                {
+                    var worksheet = package.Workbook.Worksheets[0];
+                    
+                    if (worksheet?.Dimension == null)
+                    {
+                        return data;
+                    }
+                    
+                    // Track section states
+                    bool inZeroCellVolumeSection = false;
+                    bool inVolumeCalibrationSection = false;
+                    bool zeroCellVolumeHeaderFound = false;
+                    bool volumeCalibrationHeaderFound = false;
+                    bool zeroCellVolumeReportFound = false;
+                    bool volumeCalibrationReportFound = false;
+                    
+                    for (int row = 1; row <= worksheet.Dimension.End.Row; row++)
+                    {
+                        var rowData = new List<string>();
+                        
+                        for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
                         {
-                            if (field.IndexOf("Volume Calibration Header", StringComparison.OrdinalIgnoreCase) >= 0)
-                                volumeCalibrationHeaderFound = true;
-                            if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
-                                volumeCalibrationReportFound = true;
+                            var cellValue = worksheet.Cells[row, col].Value?.ToString() ?? "";
+                            rowData.Add(cellValue);
                         }
-
-                        if (zeroCellVolumeHeaderFound || zeroCellVolumeReportFound)
+                        
+                        if (rowData.Count > 0)
                         {
-                            ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
-                        }
+                            var rowText = string.Join(",", rowData);
+                            var pipeIndex = rowText.IndexOf('|');
+                            var leftFields = new string[0];
+                            var rightFields = new string[0];
 
-                        if (volumeCalibrationHeaderFound || volumeCalibrationReportFound)
-                        {
-                            ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
+                            if (pipeIndex >= 0)
+                            {
+                                var leftPart = rowText.Substring(0, pipeIndex);
+                                var rightPart = rowText.Substring(pipeIndex + 1);
+                                leftFields = ParseCsvLine(leftPart);
+                                rightFields = ParseCsvLine(rightPart);
+                            }
+                            else
+                            {
+                                leftFields = rowData.ToArray();
+                            }
+
+                            foreach (var field in leftFields)
+                            {
+                                if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    zeroCellVolumeHeaderFound = true;
+                                    inZeroCellVolumeSection = true;
+                                    inVolumeCalibrationSection = false;
+                                }
+                                if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    zeroCellVolumeReportFound = true;
+                            }
+
+                            foreach (var field in rightFields)
+                            {
+                                if (field.IndexOf("Volume Calibration Header", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    volumeCalibrationHeaderFound = true;
+                                    inVolumeCalibrationSection = true;
+                                    inZeroCellVolumeSection = false;
+                                }
+                                if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    volumeCalibrationReportFound = true;
+                            }
+
+                            if (zeroCellVolumeHeaderFound || zeroCellVolumeReportFound)
+                            {
+                                ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
+                            }
+
+                            if (volumeCalibrationHeaderFound || volumeCalibrationReportFound)
+                            {
+                                ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
+                            }
                         }
                     }
                 }
             }
-        }
-        catch (IOException ex)
-        {
-            Console.WriteLine($"❌ IO Error reading Excel file: {ex.Message}");
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
-                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
+            catch (Exception ex)
             {
-                Console.WriteLine();
-                Console.WriteLine("   This error typically occurs when:");
-                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
-                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
-                Console.WriteLine("   3. The file is password-protected - Remove password protection");
-                Console.WriteLine();
-                Console.WriteLine("   Attempting to read as CSV format as fallback...");
-                try
-                {
-                    return ExtractFromCsv(filePath);
-                }
-                catch (Exception csvEx)
-                {
-                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
-                }
+                Console.WriteLine($"❌ EPPlus error: {ex.Message}");
+                throw;
             }
+            
+            return data;
         }
-        catch (ArgumentException ex)
-        {
-            Console.WriteLine($"❌ Argument Error reading Excel file: {ex.Message}");
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
-                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
-            {
-                Console.WriteLine();
-                Console.WriteLine("   This error typically occurs when:");
-                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
-                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
-                Console.WriteLine("   3. The file is password-protected - Remove password protection");
-                Console.WriteLine();
-                Console.WriteLine("   Attempting to read as CSV format as fallback...");
-                try
-                {
-                    return ExtractFromCsv(filePath);
-                }
-                catch (Exception csvEx)
-                {
-                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
-                }
-            }
-        }
-        catch (InvalidOperationException ex)
-        {
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
-                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
-            {
-                Console.WriteLine($"❌ Error: Cannot read this Excel file format.");
-                Console.WriteLine();
-                Console.WriteLine("   This error typically occurs when:");
-                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
-                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
-                Console.WriteLine("   3. The file is password-protected - Remove password protection");
-                Console.WriteLine();
-                Console.WriteLine("   Attempting to read as CSV format as fallback...");
-                try
-                {
-                    return ExtractFromCsv(filePath);
-                }
-                catch (Exception csvEx)
-                {
-                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"❌ Error reading Excel file: {ex.Message}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error reading Excel file: {ex.Message}");
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
-                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
-            {
-                Console.WriteLine();
-                Console.WriteLine("   This error typically occurs when:");
-                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
-                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
-                Console.WriteLine("   3. The file is password-protected - Remove password protection");
-                Console.WriteLine();
-                Console.WriteLine("   Attempting to read as CSV format as fallback...");
-                try
-                {
-                    return ExtractFromCsv(filePath);
-                }
-                catch (Exception csvEx)
-                {
-                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
-                }
-            }
-        }
-        
-        return data;
-    }
 
         private void ExtractZeroCellVolumeData(string[] fields, string line, ZeroCellVolumeData data, bool inReportSection)
         {
