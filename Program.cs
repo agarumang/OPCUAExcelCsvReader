@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OfficeOpenXml;
@@ -418,6 +419,9 @@ public class CalibrationDataExtractor
                 }
             }
 
+            // Extract Standard Deviation values first (once per line, all occurrences)
+            ExtractAllStandardDeviations(fields, data.StandardDeviations);
+
             // Extract header information from all fields
             for (int i = 0; i < fields.Length; i++)
             {
@@ -482,12 +486,6 @@ public class CalibrationDataExtractor
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
                     if (value != null) data.AverageOffset = value;
                 }
-                // Extract all Standard Deviation values (even duplicates)
-                var stdDevValue = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
-                if (stdDevValue != null && !string.IsNullOrEmpty(stdDevValue))
-                {
-                    data.StandardDeviations.Add(stdDevValue);
-                }
                 if (string.IsNullOrEmpty(data.AverageCellVolume))
                 {
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Cell Volume:");
@@ -534,6 +532,9 @@ public class CalibrationDataExtractor
                     return; // Don't process cycle rows as header data
                 }
             }
+
+            // Extract Standard Deviation values first (once per line, all occurrences)
+            ExtractAllStandardDeviations(fields, data.StandardDeviations);
 
             // Extract header information from all fields
             for (int i = 0; i < fields.Length; i++)
@@ -604,12 +605,6 @@ public class CalibrationDataExtractor
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
                     if (value != null) data.AverageOffset = value;
                 }
-                // Extract all Standard Deviation values (even duplicates)
-                var stdDevValue = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
-                if (stdDevValue != null && !string.IsNullOrEmpty(stdDevValue))
-                {
-                    data.StandardDeviations.Add(stdDevValue);
-                }
                 if (string.IsNullOrEmpty(data.AverageScaleFactor))
                 {
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Scale Factor:");
@@ -672,6 +667,50 @@ public class CalibrationDataExtractor
                 }
             }
             return null;
+        }
+
+        private void ExtractAllStandardDeviations(string[] fields, List<string> standardDeviations)
+        {
+            // Extract all Standard Deviation values from this line
+            // Use normalized values (trimmed) for comparison to catch duplicates with different whitespace
+            var foundInThisLine = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            
+            // Create a normalized set of existing values for quick lookup
+            var existingValues = new HashSet<string>(standardDeviations, StringComparer.OrdinalIgnoreCase);
+            
+            for (int i = 0; i < fields.Length; i++)
+            {
+                var field = fields[i].Trim();
+                if (string.IsNullOrEmpty(field)) continue;
+
+                var index = field.IndexOf("Standard Deviation:", StringComparison.OrdinalIgnoreCase);
+                if (index >= 0)
+                {
+                    // Check if value is in the same field after colon
+                    var value = field.Substring(index + "Standard Deviation:".Length).Trim();
+                    
+                    // If no value in same field, check next field
+                    if (string.IsNullOrEmpty(value) && i + 1 < fields.Length)
+                    {
+                        value = fields[i + 1].Trim();
+                    }
+                    
+                    // Normalize the value (trim and normalize whitespace)
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        // Normalize whitespace - replace multiple spaces with single space
+                        value = Regex.Replace(value, @"\s+", " ").Trim();
+                        
+                        // Only add if we haven't seen this exact value in this line AND it's not already in the list
+                        if (!foundInThisLine.Contains(value) && !existingValues.Contains(value))
+                        {
+                            standardDeviations.Add(value);
+                            foundInThisLine.Add(value);
+                            existingValues.Add(value); // Update the existing values set
+                        }
+                    }
+                }
+            }
         }
 
     private bool IsTimeFormat(string field)
