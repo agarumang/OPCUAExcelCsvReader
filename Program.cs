@@ -672,11 +672,9 @@ public class CalibrationDataExtractor
         private void ExtractAllStandardDeviations(string[] fields, List<string> standardDeviations)
         {
             // Extract all Standard Deviation values from this line
+            // Prevent duplicates only within the same line, but allow same value from different lines
             // Use normalized values (trimmed) for comparison to catch duplicates with different whitespace
             var foundInThisLine = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            
-            // Create a normalized set of existing values for quick lookup
-            var existingValues = new HashSet<string>(standardDeviations, StringComparer.OrdinalIgnoreCase);
             
             for (int i = 0; i < fields.Length; i++)
             {
@@ -701,12 +699,12 @@ public class CalibrationDataExtractor
                         // Normalize whitespace - replace multiple spaces with single space
                         value = Regex.Replace(value, @"\s+", " ").Trim();
                         
-                        // Only add if we haven't seen this exact value in this line AND it's not already in the list
-                        if (!foundInThisLine.Contains(value) && !existingValues.Contains(value))
+                        // Only prevent duplicates within the same line
+                        // If same value appears in different lines, it will be added multiple times (as per requirement)
+                        if (!foundInThisLine.Contains(value))
                         {
                             standardDeviations.Add(value);
                             foundInThisLine.Add(value);
-                            existingValues.Add(value); // Update the existing values set
                         }
                     }
                 }
