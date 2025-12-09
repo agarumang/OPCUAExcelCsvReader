@@ -52,16 +52,16 @@ namespace ConsoleApp1
 
         private void WriteSectionData(StreamWriter writer, ZeroCellVolumeData data)
         {
-            WriteField(writer, "Chamber Insert", data.ChamberInsert);
+            WriteField(writer, "Chamber Insert", FixEncoding(data.ChamberInsert));
             WriteField(writer, "Analysis Start", data.AnalysisStart);
             WriteField(writer, "Analysis End", data.AnalysisEnd);
-            WriteField(writer, "Temperature", data.Temperature);
+            WriteField(writer, "Temperature", FixEncoding(data.Temperature));
             WriteField(writer, "Number of Purges", data.NumberOfPurges);
             WriteField(writer, "Purge fill pressure", data.PurgeFillPressure);
             WriteField(writer, "Number of cycles", data.NumberOfCycles);
             WriteField(writer, "Cycle fill pressure", data.CycleFillPressure);
             WriteField(writer, "Equilib. Rate", data.EquilibRate);
-            WriteField(writer, "Expansion Volume", data.ExpansionVolume);
+            WriteField(writer, "Expansion Volume", FixEncoding(data.ExpansionVolume));
             
             // Write cycles
             if (data.Cycles.Count > 0)
@@ -71,24 +71,28 @@ namespace ConsoleApp1
                 writer.WriteLine("Cycle#,Cell Volume (cm³),Deviation (cm³)");
                 foreach (var cycle in data.Cycles)
                 {
-                    writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(cycle.CellVolume)},{EscapeCsv(cycle.Deviation)}");
+                    writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))}");
                 }
             }
             
             writer.WriteLine();
-            WriteField(writer, "Average Offset", data.AverageOffset);
-            WriteField(writer, "Standard Deviation", data.StandardDeviation);
-            WriteField(writer, "Average Cell Volume", data.AverageCellVolume);
+            WriteField(writer, "Average Offset", FixEncoding(data.AverageOffset));
+            // Write all Standard Deviation values
+            foreach (var stdDev in data.StandardDeviations)
+            {
+                WriteField(writer, "Standard Deviation", FixEncoding(stdDev));
+            }
+            WriteField(writer, "Average Cell Volume", FixEncoding(data.AverageCellVolume));
         }
 
         private void WriteVolumeCalibrationData(StreamWriter writer, VolumeCalibrationData data)
         {
-            WriteField(writer, "Chamber Insert", data.ChamberInsert);
+            WriteField(writer, "Chamber Insert", FixEncoding(data.ChamberInsert));
             WriteField(writer, "Analysis Start", data.AnalysisStart);
             WriteField(writer, "Analysis End", data.AnalysisEnd);
-            WriteField(writer, "Temperature", data.Temperature);
+            WriteField(writer, "Temperature", FixEncoding(data.Temperature));
             WriteField(writer, "Reported", data.Reported);
-            WriteField(writer, "Vol. of Cal. Standard", data.VolOfCalStandard);
+            WriteField(writer, "Vol. of Cal. Standard", FixEncoding(data.VolOfCalStandard));
             WriteField(writer, "Number of Purges", data.NumberOfPurges);
             WriteField(writer, "Purge fill pressure", data.PurgeFillPressure);
             WriteField(writer, "Number of cycles", data.NumberOfCycles);
@@ -103,16 +107,20 @@ namespace ConsoleApp1
                 writer.WriteLine("Cycle#,Cell Volume (cm³),Deviation (cm³),Expansion Volume (cm³),Deviation (cm³)");
                 foreach (var cycle in data.Cycles)
                 {
-                    writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(cycle.CellVolume)},{EscapeCsv(cycle.Deviation)},{EscapeCsv(cycle.ExpansionVolume)},{EscapeCsv(cycle.ExpansionDeviation)}");
+                    writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))},{EscapeCsv(FixEncoding(cycle.ExpansionVolume))},{EscapeCsv(FixEncoding(cycle.ExpansionDeviation))}");
                 }
             }
             
             writer.WriteLine();
-            WriteField(writer, "Average Offset", data.AverageOffset);
-            WriteField(writer, "Standard Deviation", data.StandardDeviation);
+            WriteField(writer, "Average Offset", FixEncoding(data.AverageOffset));
+            // Write all Standard Deviation values
+            foreach (var stdDev in data.StandardDeviations)
+            {
+                WriteField(writer, "Standard Deviation", FixEncoding(stdDev));
+            }
             WriteField(writer, "Average Scale Factor", data.AverageScaleFactor);
-            WriteField(writer, "Average Cell Volume", data.AverageCellVolume);
-            WriteField(writer, "Average Expansion Volume", data.AverageExpansionVolume);
+            WriteField(writer, "Average Cell Volume", FixEncoding(data.AverageCellVolume));
+            WriteField(writer, "Average Expansion Volume", FixEncoding(data.AverageExpansionVolume));
         }
 
         private void WriteField(StreamWriter writer, string fieldName, string value)
@@ -121,6 +129,26 @@ namespace ConsoleApp1
             {
                 writer.WriteLine($"{EscapeCsv(fieldName)},{EscapeCsv(value)}");
             }
+        }
+
+        private string FixEncoding(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+            
+            // Fix encoding issues: Replace cm? with cm³, ø with °
+            // Handle various possible corrupted encodings of cm³
+            value = value.Replace("cm?", "cm³");
+            value = value.Replace("cm³", "cm³"); // Ensure proper superscript 3
+            value = value.Replace("cm3", "cm³");
+            value = value.Replace("cm^3", "cm³");
+            
+            // Fix temperature symbol
+            value = value.Replace("øC", "°C");
+            value = value.Replace("ø", "°");
+            value = value.Replace("°C", "°C"); // Ensure proper degree symbol
+            
+            return value;
         }
 
         private string EscapeCsv(string value)

@@ -148,7 +148,7 @@ public class ExtractedCalibrationData
         public string ExpansionVolume { get; set; } = "";
         public List<CycleData> Cycles { get; set; } = new List<CycleData>();
         public string AverageOffset { get; set; } = "";
-        public string StandardDeviation { get; set; } = "";
+        public List<string> StandardDeviations { get; set; } = new List<string>();
         public string AverageCellVolume { get; set; } = "";
     }
 
@@ -167,7 +167,7 @@ public class ExtractedCalibrationData
         public string EquilibRate { get; set; } = "";
         public List<VolumeCalibrationCycleData> Cycles { get; set; } = new List<VolumeCalibrationCycleData>();
         public string AverageOffset { get; set; } = "";
-        public string StandardDeviation { get; set; } = "";
+        public List<string> StandardDeviations { get; set; } = new List<string>();
         public string AverageScaleFactor { get; set; } = "";
         public string AverageCellVolume { get; set; } = "";
         public string AverageExpansionVolume { get; set; } = "";
@@ -211,9 +211,9 @@ public class CalibrationDataExtractor
         }
 
         private ExtractedCalibrationData ExtractFromCsv(string filePath)
-    {
-        var data = new ExtractedCalibrationData();
-        var lines = File.ReadAllLines(filePath);
+        {
+            var data = new ExtractedCalibrationData();
+            var lines = File.ReadAllLines(filePath, Encoding.UTF8);
         
         bool inZeroCellVolumeSection = false;
         bool inVolumeCalibrationSection = false;
@@ -481,10 +481,11 @@ public class CalibrationDataExtractor
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
                     if (value != null) data.AverageOffset = value;
                 }
-                if (string.IsNullOrEmpty(data.StandardDeviation))
+                // Extract all Standard Deviation values (even duplicates)
+                var stdDevValue = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
+                if (stdDevValue != null && !string.IsNullOrEmpty(stdDevValue))
                 {
-                    var value = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
-                    if (value != null) data.StandardDeviation = value;
+                    data.StandardDeviations.Add(stdDevValue);
                 }
                 if (string.IsNullOrEmpty(data.AverageCellVolume))
                 {
@@ -602,10 +603,11 @@ public class CalibrationDataExtractor
                     var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
                     if (value != null) data.AverageOffset = value;
                 }
-                if (string.IsNullOrEmpty(data.StandardDeviation))
+                // Extract all Standard Deviation values (even duplicates)
+                var stdDevValue = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
+                if (stdDevValue != null && !string.IsNullOrEmpty(stdDevValue))
                 {
-                    var value = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
-                    if (value != null) data.StandardDeviation = value;
+                    data.StandardDeviations.Add(stdDevValue);
                 }
                 if (string.IsNullOrEmpty(data.AverageScaleFactor))
                 {
