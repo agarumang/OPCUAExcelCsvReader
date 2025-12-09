@@ -1,0 +1,55 @@
+Calibration Report (Unit 1 - S/N: 4661),,,,|,Calibration Report (Unit 1 - S/N: 4661),,,,
+AccuPyc II 1340 V3.00,,Unit 1 - S/N: 4661,Page 1,|,AccuPyc II 1340 V3.00,,Unit 1 - S/N: 4661,Page 1,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+Zero Cell Volume Header,,,,|,Volume Calibration Header,,,,
+,,,,|,,,,,
+,,,,|,,,,,
+Chamber Insert:,35 cm?,,,|,Chamber Insert:,35 cm?,,,
+Analysis Start:,30-06-2020 11:20:31 ,Reported:,30-06-2020 14:07:56 ,|,Analysis Start:,30-06-2020 11:52:31 ,Reported:,30-06-2020 14:07:56 ,
+Analysis End:,30-06-2020 11:51:55 ,Temperature:,21.22 øC,|,Analysis End:,30-06-2020 12:41:12 ,Temperature:,21.93 øC,
+Number of Purges:,10,Purge fill pressure:, 19.500 psig,|,Vol. of Cal. Standard:,  16.7579 cm?,,,
+Number of cycles:,10,Cycle fill pressure:, 19.500 psig,|,Number of Purges:,10,Purge fill pressure:, 19.500 psig,
+Equilib. Rate:, 0.0050 psig/min,Expansion Volume:,  50.0000 cm?,|,Number of cycles:,10,Cycle fill pressure:, 19.500 psig,
+,,,,|,Equilib. Rate:, 0.0050 psig/min,,,
+,,,,|,,,,,
+Zero Cell Volume Report,,,,|,,,,,
+,,,,|,Volume Calibration Report,,,,
+Cycle#,"Cell
+Volume
+(cm?)","Deviation
+(cm?)",,|,,,,,
+1,26.9066,0.0041,,|,Cycle#,"Cell
+Volume
+(cm?)","Deviation
+(cm?)","Expansion
+Volume
+(cm?)","Deviation
+(cm?)"
+2,26.906,0.0035,,|,1,39.7419,0.0034,73.8629,0.0064
+3,26.8957,-0.0068,,|,2,39.7436,0.0051,73.8661,0.0096
+4,26.9082,0.0058,,|,3,39.7215,-0.017,73.8249,-0.0316
+5,26.9021,-0.0004,,|,4,39.7184,-0.0201,73.8192,-0.0373
+6,26.8941,-0.0084,,|,5,39.7345,-0.0039,73.8492,-0.0073
+7,26.903,0.0006,,|,6,39.7852,0.0468,73.9435,0.0869
+8,26.9067,0.0042,,|,7,39.7476,0.0092,73.8736,0.0171
+9,26.8962,-0.0062,,|,8,39.7212,-0.0172,73.8245,-0.032
+10,26.9059,0.0035,,|,9,39.74,0.0015,73.8594,0.0028
+,,,,|,10,39.7307,-0.0078,73.842,-0.0145
+,,,,|,,,,,
+ ,,,,|,,,,,
+,,,,|, ,,,,
+Average Offset:   -8.0975 cm?,Standard Deviation:    0.0050 cm?,,,|,,,,,
+Average Cell Volume:   26.9025 cm?,Standard Deviation:    0.0050 cm?,,,|,Average Offset:   -8.0975 cm?,Standard Deviation:    0.0050 cm?,,,
+,,,,|,Average Scale Factor:    1.4771,Standard Deviation:    0.0007,,,
+,,,,|,Average Cell Volume:   39.7385 cm?,Standard Deviation:    0.0184 cm?,,,
+,,,,|,Average Expansion Volume:   73.8565 cm?,Standard Deviation:    0.0342 cm?,,, 
