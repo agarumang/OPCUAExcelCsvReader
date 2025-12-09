@@ -32,14 +32,14 @@ namespace ConsoleApp1
                 else
                 {
                     // Show file dialog for file selection
-                    OpenFileDialog openFileDialog = new OpenFileDialog();
+                OpenFileDialog openFileDialog = new OpenFileDialog();
                     openFileDialog.Title = "Select a Calibration Report File (CSV or Excel)";
                     openFileDialog.Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx;*.xls)|*.xlsx;*.xls|All files (*.*)|*.*";
 
-                    if (openFileDialog.ShowDialog() != DialogResult.OK)
-                    {
-                        return;
-                    }
+                if (openFileDialog.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
 
                     filePath = openFileDialog.FileName;
                 }
@@ -128,8 +128,8 @@ namespace ConsoleApp1
 
     }
 
-    public class ExtractedCalibrationData
-    {
+public class ExtractedCalibrationData
+{
         public ZeroCellVolumeData ZeroCellVolume { get; set; } = new ZeroCellVolumeData();
         public VolumeCalibrationData VolumeCalibration { get; set; } = new VolumeCalibrationData();
     }
@@ -187,11 +187,11 @@ namespace ConsoleApp1
         public string Deviation { get; set; } = "";
         public string ExpansionVolume { get; set; } = "";
         public string ExpansionDeviation { get; set; } = "";
-    }
+}
 
-    public class CalibrationDataExtractor
-    {
-        public ExtractedCalibrationData ExtractRequiredData(string filePath)
+public class CalibrationDataExtractor
+{
+    public ExtractedCalibrationData ExtractRequiredData(string filePath)
         {
             var data = new ExtractedCalibrationData();
             
@@ -211,7 +211,7 @@ namespace ConsoleApp1
         }
 
         private ExtractedCalibrationData ExtractFromCsv(string filePath)
-        {
+    {
         var data = new ExtractedCalibrationData();
         var lines = File.ReadAllLines(filePath);
         
@@ -275,13 +275,13 @@ namespace ConsoleApp1
             // Extract Zero Cell Volume data (left side)
             if (inZeroCellVolumeSection || zeroCellVolumeHeaderFound)
             {
-                ExtractZeroCellVolumeData(leftFields, data.ZeroCellVolume, zeroCellVolumeReportFound);
+                ExtractZeroCellVolumeData(leftFields, line, data.ZeroCellVolume, zeroCellVolumeReportFound);
             }
 
             // Extract Volume Calibration data (right side)
             if (inVolumeCalibrationSection || volumeCalibrationHeaderFound)
             {
-                ExtractVolumeCalibrationData(rightFields, data.VolumeCalibration, volumeCalibrationReportFound);
+                ExtractVolumeCalibrationData(rightFields, line, data.VolumeCalibration, volumeCalibrationReportFound);
             }
         }
 
@@ -361,12 +361,12 @@ namespace ConsoleApp1
 
                         if (zeroCellVolumeHeaderFound || zeroCellVolumeReportFound)
                         {
-                            ExtractZeroCellVolumeData(leftFields, data.ZeroCellVolume, zeroCellVolumeReportFound);
+                            ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
                         }
 
                         if (volumeCalibrationHeaderFound || volumeCalibrationReportFound)
                         {
-                            ExtractVolumeCalibrationData(rightFields, data.VolumeCalibration, volumeCalibrationReportFound);
+                            ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
                         }
                     }
                 }
@@ -380,249 +380,299 @@ namespace ConsoleApp1
         return data;
     }
 
-        private void ExtractZeroCellVolumeData(string[] fields, ZeroCellVolumeData data, bool inReportSection)
+        private void ExtractZeroCellVolumeData(string[] fields, string line, ZeroCellVolumeData data, bool inReportSection)
         {
-        if (fields == null || fields.Length == 0) return;
+            if (fields == null || fields.Length == 0) return;
 
-        for (int i = 0; i < fields.Length; i++)
-        {
-            var field = fields[i].Trim();
-            if (string.IsNullOrEmpty(field)) continue;
-
-            // Extract header information
-            if (string.IsNullOrEmpty(data.ChamberInsert))
+            // Check if this is a cycle row (first field is a number)
+            if (inReportSection && fields.Length > 0)
             {
-                var value = ExtractFieldValue(field, "Chamber Insert:");
-                if (value != null) data.ChamberInsert = value;
-            }
-            if (string.IsNullOrEmpty(data.AnalysisStart))
-            {
-                var value = ExtractFieldValue(field, "Analysis Start:");
-                if (value != null) data.AnalysisStart = value;
-            }
-            if (string.IsNullOrEmpty(data.AnalysisEnd))
-            {
-                var value = ExtractFieldValue(field, "Analysis End:");
-                if (value != null) data.AnalysisEnd = value;
-            }
-            if (string.IsNullOrEmpty(data.Temperature))
-            {
-                var value = ExtractFieldValue(field, "Temperature:");
-                if (value != null) data.Temperature = value;
-            }
-            if (string.IsNullOrEmpty(data.NumberOfPurges))
-            {
-                var value = ExtractFieldValue(field, "Number of Purges:");
-                if (value != null) data.NumberOfPurges = value;
-            }
-            if (string.IsNullOrEmpty(data.PurgeFillPressure))
-            {
-                var value = ExtractFieldValue(field, "Purge fill pressure:");
-                if (value != null) data.PurgeFillPressure = value;
-            }
-            if (string.IsNullOrEmpty(data.NumberOfCycles))
-            {
-                var value = ExtractFieldValue(field, "Number of cycles:");
-                if (value != null) data.NumberOfCycles = value;
-            }
-            if (string.IsNullOrEmpty(data.CycleFillPressure))
-            {
-                var value = ExtractFieldValue(field, "Cycle fill pressure:");
-                if (value != null) data.CycleFillPressure = value;
-            }
-            if (string.IsNullOrEmpty(data.EquilibRate))
-            {
-                var value = ExtractFieldValue(field, "Equilib. Rate:");
-                if (value != null) data.EquilibRate = value;
-            }
-            if (string.IsNullOrEmpty(data.ExpansionVolume))
-            {
-                var value = ExtractFieldValue(field, "Expansion Volume:");
-                if (value != null) data.ExpansionVolume = value;
-            }
-            
-            // Extract cycle data (in report section)
-            if (inReportSection && i < fields.Length - 1)
-            {
-                if (field == "Cycle#" || field.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0)
+                var firstField = fields[0].Trim();
+                
+                // Skip header rows
+                if (firstField.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                    firstField == "Cycle#")
                 {
-                    // Skip header row
-                    continue;
+                    return;
                 }
                 
-                // Try to parse cycle data
-                if (double.TryParse(field, out _) && i + 1 < fields.Length)
+                // Check if first field is a cycle number (integer)
+                if (int.TryParse(firstField, out int cycleNumber))
                 {
-                    var cycle = new CycleData
+                    // This is a cycle row - parse the complete row
+                    if (fields.Length >= 3)
                     {
-                        CycleNumber = field,
-                        CellVolume = i + 1 < fields.Length ? fields[i + 1].Trim() : "",
-                        Deviation = i + 2 < fields.Length ? fields[i + 2].Trim() : ""
-                    };
-                    if (!string.IsNullOrEmpty(cycle.CellVolume))
-                    {
-                        data.Cycles.Add(cycle);
+                        var cycle = new CycleData
+                        {
+                            CycleNumber = firstField,
+                            CellVolume = fields[1].Trim(),
+                            Deviation = fields[2].Trim()
+                        };
+                        if (!string.IsNullOrEmpty(cycle.CellVolume))
+                        {
+                            data.Cycles.Add(cycle);
+                        }
                     }
+                    return; // Don't process cycle rows as header data
                 }
             }
 
-            // Extract summary data
-            if (string.IsNullOrEmpty(data.AverageOffset))
+            // Extract header information from all fields
+            for (int i = 0; i < fields.Length; i++)
             {
-                var value = ExtractFieldValue(field, "Average Offset:");
-                if (value != null) data.AverageOffset = value;
-            }
-            if (string.IsNullOrEmpty(data.StandardDeviation))
-            {
-                var value = ExtractFieldValue(field, "Standard Deviation:");
-                if (value != null) data.StandardDeviation = value;
-            }
-            if (string.IsNullOrEmpty(data.AverageCellVolume))
-            {
-                var value = ExtractFieldValue(field, "Average Cell Volume:");
-                if (value != null) data.AverageCellVolume = value;
+                var field = fields[i].Trim();
+                if (string.IsNullOrEmpty(field)) continue;
+
+                // Extract header information - try with fallback to next field
+                if (string.IsNullOrEmpty(data.ChamberInsert))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Chamber Insert:");
+                    if (value != null) data.ChamberInsert = value;
+                }
+                if (string.IsNullOrEmpty(data.AnalysisStart))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Analysis Start:");
+                    if (value != null) data.AnalysisStart = value;
+                }
+                if (string.IsNullOrEmpty(data.AnalysisEnd))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Analysis End:");
+                    if (value != null) data.AnalysisEnd = value;
+                }
+                if (string.IsNullOrEmpty(data.Temperature))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Temperature:");
+                    if (value != null) data.Temperature = value;
+                }
+                if (string.IsNullOrEmpty(data.NumberOfPurges))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Number of Purges:");
+                    if (value != null) data.NumberOfPurges = value;
+                }
+                if (string.IsNullOrEmpty(data.PurgeFillPressure))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Purge fill pressure:");
+                    if (value != null) data.PurgeFillPressure = value;
+                }
+                if (string.IsNullOrEmpty(data.NumberOfCycles))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Number of cycles:");
+                    if (value != null) data.NumberOfCycles = value;
+                }
+                if (string.IsNullOrEmpty(data.CycleFillPressure))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Cycle fill pressure:");
+                    if (value != null) data.CycleFillPressure = value;
+                }
+                if (string.IsNullOrEmpty(data.EquilibRate))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Equilib. Rate:");
+                    if (value != null) data.EquilibRate = value;
+                }
+                if (string.IsNullOrEmpty(data.ExpansionVolume))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Expansion Volume:");
+                    if (value != null) data.ExpansionVolume = value;
+                }
+
+                // Extract summary data
+                if (string.IsNullOrEmpty(data.AverageOffset))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
+                    if (value != null) data.AverageOffset = value;
+                }
+                if (string.IsNullOrEmpty(data.StandardDeviation))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
+                    if (value != null) data.StandardDeviation = value;
+                }
+                if (string.IsNullOrEmpty(data.AverageCellVolume))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Cell Volume:");
+                    if (value != null) data.AverageCellVolume = value;
+                }
             }
         }
-    }
 
-        private void ExtractVolumeCalibrationData(string[] fields, VolumeCalibrationData data, bool inReportSection)
+        private void ExtractVolumeCalibrationData(string[] fields, string line, VolumeCalibrationData data, bool inReportSection)
         {
-        if (fields == null || fields.Length == 0) return;
+            if (fields == null || fields.Length == 0) return;
 
-        for (int i = 0; i < fields.Length; i++)
-        {
-            var field = fields[i].Trim();
-            if (string.IsNullOrEmpty(field)) continue;
-
-            // Extract header information
-            if (string.IsNullOrEmpty(data.ChamberInsert))
+            // Check if this is a cycle row (first field is a number)
+            if (inReportSection && fields.Length > 0)
             {
-                var value = ExtractFieldValue(field, "Chamber Insert:");
-                if (value != null) data.ChamberInsert = value;
-            }
-            if (string.IsNullOrEmpty(data.AnalysisStart))
-            {
-                var value = ExtractFieldValue(field, "Analysis Start:");
-                if (value != null) data.AnalysisStart = value;
-            }
-            if (string.IsNullOrEmpty(data.AnalysisEnd))
-            {
-                var value = ExtractFieldValue(field, "Analysis End:");
-                if (value != null) data.AnalysisEnd = value;
-            }
-            if (string.IsNullOrEmpty(data.Temperature))
-            {
-                var value = ExtractFieldValue(field, "Temperature:");
-                if (value != null) data.Temperature = value;
-            }
-            if (string.IsNullOrEmpty(data.Reported))
-            {
-                var value = ExtractFieldValue(field, "Reported:");
-                if (value != null) data.Reported = value;
-            }
-            if (string.IsNullOrEmpty(data.VolOfCalStandard))
-            {
-                var value = ExtractFieldValue(field, "Vol. of Cal. Standard:");
-                if (value != null) data.VolOfCalStandard = value;
-            }
-            if (string.IsNullOrEmpty(data.NumberOfPurges))
-            {
-                var value = ExtractFieldValue(field, "Number of Purges:");
-                if (value != null) data.NumberOfPurges = value;
-            }
-            if (string.IsNullOrEmpty(data.PurgeFillPressure))
-            {
-                var value = ExtractFieldValue(field, "Purge fill pressure:");
-                if (value != null) data.PurgeFillPressure = value;
-            }
-            if (string.IsNullOrEmpty(data.NumberOfCycles))
-            {
-                var value = ExtractFieldValue(field, "Number of cycles:");
-                if (value != null) data.NumberOfCycles = value;
-            }
-            if (string.IsNullOrEmpty(data.CycleFillPressure))
-            {
-                var value = ExtractFieldValue(field, "Cycle fill pressure:");
-                if (value != null) data.CycleFillPressure = value;
-            }
-            if (string.IsNullOrEmpty(data.EquilibRate))
-            {
-                var value = ExtractFieldValue(field, "Equilib. Rate:");
-                if (value != null) data.EquilibRate = value;
-            }
-            
-            // Extract cycle data (in report section)
-            if (inReportSection && i < fields.Length - 1)
-            {
-                if (field == "Cycle#" || field.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0)
+                var firstField = fields[0].Trim();
+                
+                // Skip header rows
+                if (firstField.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                    firstField == "Cycle#")
                 {
-                    // Skip header row
-                    continue;
+                    return;
                 }
                 
-                // Try to parse cycle data
-                if (double.TryParse(field, out _) && i + 1 < fields.Length)
+                // Check if first field is a cycle number (integer)
+                if (int.TryParse(firstField, out int cycleNumber))
                 {
-                    var cycle = new VolumeCalibrationCycleData
+                    // This is a cycle row - parse the complete row
+                    if (fields.Length >= 5)
                     {
-                        CycleNumber = field,
-                        CellVolume = i + 1 < fields.Length ? fields[i + 1].Trim() : "",
-                        Deviation = i + 2 < fields.Length ? fields[i + 2].Trim() : "",
-                        ExpansionVolume = i + 3 < fields.Length ? fields[i + 3].Trim() : "",
-                        ExpansionDeviation = i + 4 < fields.Length ? fields[i + 4].Trim() : ""
-                    };
-                    if (!string.IsNullOrEmpty(cycle.CellVolume))
-                    {
-                        data.Cycles.Add(cycle);
+                        var cycle = new VolumeCalibrationCycleData
+                        {
+                            CycleNumber = firstField,
+                            CellVolume = fields[1].Trim(),
+                            Deviation = fields[2].Trim(),
+                            ExpansionVolume = fields[3].Trim(),
+                            ExpansionDeviation = fields[4].Trim()
+                        };
+                        if (!string.IsNullOrEmpty(cycle.CellVolume))
+                        {
+                            data.Cycles.Add(cycle);
+                        }
                     }
+                    return; // Don't process cycle rows as header data
                 }
             }
 
-            // Extract summary data
-            if (string.IsNullOrEmpty(data.AverageOffset))
+            // Extract header information from all fields
+            for (int i = 0; i < fields.Length; i++)
             {
-                var value = ExtractFieldValue(field, "Average Offset:");
-                if (value != null) data.AverageOffset = value;
-            }
-            if (string.IsNullOrEmpty(data.StandardDeviation))
-            {
-                var value = ExtractFieldValue(field, "Standard Deviation:");
-                if (value != null) data.StandardDeviation = value;
-            }
-            if (string.IsNullOrEmpty(data.AverageScaleFactor))
-            {
-                var value = ExtractFieldValue(field, "Average Scale Factor:");
-                if (value != null) data.AverageScaleFactor = value;
-            }
-            if (string.IsNullOrEmpty(data.AverageCellVolume))
-            {
-                var value = ExtractFieldValue(field, "Average Cell Volume:");
-                if (value != null) data.AverageCellVolume = value;
-            }
-            if (string.IsNullOrEmpty(data.AverageExpansionVolume))
-            {
-                var value = ExtractFieldValue(field, "Average Expansion Volume:");
-                if (value != null) data.AverageExpansionVolume = value;
+                var field = fields[i].Trim();
+                if (string.IsNullOrEmpty(field)) continue;
+
+                // Extract header information - try with fallback to next field
+                if (string.IsNullOrEmpty(data.ChamberInsert))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Chamber Insert:");
+                    if (value != null) data.ChamberInsert = value;
+                }
+                if (string.IsNullOrEmpty(data.AnalysisStart))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Analysis Start:");
+                    if (value != null) data.AnalysisStart = value;
+                }
+                if (string.IsNullOrEmpty(data.AnalysisEnd))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Analysis End:");
+                    if (value != null) data.AnalysisEnd = value;
+                }
+                if (string.IsNullOrEmpty(data.Temperature))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Temperature:");
+                    if (value != null) data.Temperature = value;
+                }
+                if (string.IsNullOrEmpty(data.Reported))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Reported:");
+                    if (value != null) data.Reported = value;
+                }
+                if (string.IsNullOrEmpty(data.VolOfCalStandard))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Vol. of Cal. Standard:");
+                    if (value != null) data.VolOfCalStandard = value;
+                }
+                if (string.IsNullOrEmpty(data.NumberOfPurges))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Number of Purges:");
+                    if (value != null) data.NumberOfPurges = value;
+                }
+                if (string.IsNullOrEmpty(data.PurgeFillPressure))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Purge fill pressure:");
+                    if (value != null) data.PurgeFillPressure = value;
+                }
+                if (string.IsNullOrEmpty(data.NumberOfCycles))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Number of cycles:");
+                    if (value != null) data.NumberOfCycles = value;
+                }
+                if (string.IsNullOrEmpty(data.CycleFillPressure))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Cycle fill pressure:");
+                    if (value != null) data.CycleFillPressure = value;
+                }
+                if (string.IsNullOrEmpty(data.EquilibRate))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Equilib. Rate:");
+                    if (value != null) data.EquilibRate = value;
+                }
+
+                // Extract summary data
+                if (string.IsNullOrEmpty(data.AverageOffset))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Offset:");
+                    if (value != null) data.AverageOffset = value;
+                }
+                if (string.IsNullOrEmpty(data.StandardDeviation))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Standard Deviation:");
+                    if (value != null) data.StandardDeviation = value;
+                }
+                if (string.IsNullOrEmpty(data.AverageScaleFactor))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Scale Factor:");
+                    if (value != null) data.AverageScaleFactor = value;
+                }
+                if (string.IsNullOrEmpty(data.AverageCellVolume))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Cell Volume:");
+                    if (value != null) data.AverageCellVolume = value;
+                }
+                if (string.IsNullOrEmpty(data.AverageExpansionVolume))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Average Expansion Volume:");
+                    if (value != null) data.AverageExpansionVolume = value;
+                }
             }
         }
-    }
 
         private string ExtractFieldValue(string field, string label)
         {
-        var index = field.IndexOf(label, StringComparison.OrdinalIgnoreCase);
-        if (index >= 0)
-        {
-            var value = field.Substring(index + label.Length).Trim();
-            if (!string.IsNullOrEmpty(value))
+            var index = field.IndexOf(label, StringComparison.OrdinalIgnoreCase);
+            if (index >= 0)
             {
-                return value;
+                var value = field.Substring(index + label.Length).Trim();
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
             }
+            return null;
         }
-        return null;
-    }
 
-        private bool IsTimeFormat(string field)
+        private string ExtractFieldValueWithFallback(string[] fields, int startIndex, string label)
         {
+            // First, try to find the label in the current field
+            for (int i = startIndex; i < fields.Length; i++)
+            {
+                var field = fields[i].Trim();
+                if (string.IsNullOrEmpty(field)) continue;
+
+                var index = field.IndexOf(label, StringComparison.OrdinalIgnoreCase);
+                if (index >= 0)
+                {
+                    // Check if value is in the same field after colon
+                    var value = field.Substring(index + label.Length).Trim();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return value;
+                    }
+                    
+                    // If no value in same field, check next field
+                    if (i + 1 < fields.Length)
+                    {
+                        var nextValue = fields[i + 1].Trim();
+                        if (!string.IsNullOrEmpty(nextValue))
+                        {
+                            return nextValue;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+    private bool IsTimeFormat(string field)
+    {
         if (string.IsNullOrEmpty(field)) return false;
 
         // Check for common time formats: dd-MM-yyyy HH:mm:ss or similar
@@ -631,8 +681,8 @@ namespace ConsoleApp1
                field.Length >= 16; // Minimum length for date-time
     }
 
-        private string GetDataWithFallback(string[] fields, params int[] columnIndices)
-        {
+    private string GetDataWithFallback(string[] fields, params int[] columnIndices)
+    {
         foreach (int index in columnIndices)
         {
             if (index >= 0 && index < fields.Length && !string.IsNullOrWhiteSpace(fields[index]))
@@ -643,8 +693,8 @@ namespace ConsoleApp1
         return "";
     }
 
-        private string[] ParseCsvLine(string line)
-        {
+    private string[] ParseCsvLine(string line)
+    {
         if (string.IsNullOrEmpty(line))
             return new string[0];
 
@@ -672,8 +722,8 @@ namespace ConsoleApp1
         return result.ToArray();
     }
 
-        private string CleanCsvField(string field)
-        {
+    private string CleanCsvField(string field)
+    {
         if (string.IsNullOrEmpty(field))
             return field;
 
@@ -686,6 +736,6 @@ namespace ConsoleApp1
         }
 
         return field;
-        }
     }
+}
 }
