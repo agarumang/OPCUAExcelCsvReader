@@ -319,16 +319,6 @@ public class CalibrationDataExtractor
                     
                     using (reader)
                     {
-                        // Read the first worksheet
-                        var result = reader.AsDataSet();
-                        var table = result.Tables[0];
-                        
-                        if (table == null || table.Rows.Count == 0)
-                        {
-                            Console.WriteLine("⚠️ Warning: Excel file appears to be empty.");
-                            return data;
-                        }
-                        
                         // Track section states
                         bool inZeroCellVolumeSection = false;
                         bool inVolumeCalibrationSection = false;
@@ -337,15 +327,15 @@ public class CalibrationDataExtractor
                         bool zeroCellVolumeReportFound = false;
                         bool volumeCalibrationReportFound = false;
                         
-                        // Iterate through all rows
-                        for (int row = 0; row < table.Rows.Count; row++)
+                        // Read rows directly from the reader (first worksheet only)
+                        while (reader.Read())
                         {
                             var rowData = new List<string>();
                             
-                            // Get all cells in the row
-                            for (int col = 0; col < table.Columns.Count; col++)
+                            // Get all cells in the current row
+                            for (int col = 0; col < reader.FieldCount; col++)
                             {
-                                var cellValue = table.Rows[row][col]?.ToString() ?? "";
+                                var cellValue = reader.GetValue(col)?.ToString() ?? "";
                                 rowData.Add(cellValue);
                             }
                             
