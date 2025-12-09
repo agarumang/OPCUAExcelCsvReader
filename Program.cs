@@ -394,10 +394,34 @@ public class CalibrationDataExtractor
                 }
             }
         }
-        catch (OfficeOpenXml.ExcelErrorException ex)
+        catch (IOException ex)
         {
-            Console.WriteLine($"❌ Excel Error: {ex.Message}");
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted"))
+            Console.WriteLine($"❌ IO Error reading Excel file: {ex.Message}");
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
+                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
+            {
+                Console.WriteLine();
+                Console.WriteLine("   This error typically occurs when:");
+                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
+                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
+                Console.WriteLine("   3. The file is password-protected - Remove password protection");
+                Console.WriteLine();
+                Console.WriteLine("   Attempting to read as CSV format as fallback...");
+                try
+                {
+                    return ExtractFromCsv(filePath);
+                }
+                catch (Exception csvEx)
+                {
+                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
+                }
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"❌ Argument Error reading Excel file: {ex.Message}");
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
+                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
             {
                 Console.WriteLine();
                 Console.WriteLine("   This error typically occurs when:");
@@ -418,7 +442,8 @@ public class CalibrationDataExtractor
         }
         catch (InvalidOperationException ex)
         {
-            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted"))
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
+                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
             {
                 Console.WriteLine($"❌ Error: Cannot read this Excel file format.");
                 Console.WriteLine();
