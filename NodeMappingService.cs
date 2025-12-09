@@ -132,6 +132,8 @@ namespace ConsoleApp1
         {
             if (!string.IsNullOrEmpty(nodeId) && !string.IsNullOrEmpty(value))
             {
+                // Apply encoding fixes before writing to Kepware
+                value = EncodingHelper.FixEncoding(value);
                 items.Add(new OpcUaWriteItem(nodeId, value, description));
             }
         }

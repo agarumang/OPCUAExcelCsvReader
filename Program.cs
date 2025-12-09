@@ -49,8 +49,6 @@ namespace ConsoleApp1
                 if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 {
                     Console.WriteLine("Error: File not found or path is empty.");
-                    Console.WriteLine("Press any key to exit...");
-                    Console.ReadKey();
                     return;
                 }
 
@@ -71,7 +69,7 @@ namespace ConsoleApp1
             }
             finally
             {
-                // Silent completion
+                // Application will close automatically after completion
             }
         }
 
@@ -447,7 +445,7 @@ public class CalibrationDataExtractor
                 if (string.IsNullOrEmpty(data.Temperature))
                 {
                     var value = ExtractFieldValueWithFallback(fields, i, "Temperature:");
-                    if (value != null) data.Temperature = value;
+                    if (value != null) data.Temperature = EncodingHelper.FixEncoding(value);
                 }
                 if (string.IsNullOrEmpty(data.NumberOfPurges))
                 {
@@ -561,7 +559,7 @@ public class CalibrationDataExtractor
                 if (string.IsNullOrEmpty(data.Temperature))
                 {
                     var value = ExtractFieldValueWithFallback(fields, i, "Temperature:");
-                    if (value != null) data.Temperature = value;
+                    if (value != null) data.Temperature = EncodingHelper.FixEncoding(value);
                 }
                 if (string.IsNullOrEmpty(data.Reported))
                 {

@@ -133,22 +133,7 @@ namespace ConsoleApp1
 
         private string FixEncoding(string value)
         {
-            if (string.IsNullOrEmpty(value))
-                return value;
-            
-            // Fix encoding issues: Replace cm? with cm³, ø with °
-            // Handle various possible corrupted encodings of cm³
-            value = value.Replace("cm?", "cm³");
-            value = value.Replace("cm³", "cm³"); // Ensure proper superscript 3
-            value = value.Replace("cm3", "cm³");
-            value = value.Replace("cm^3", "cm³");
-            
-            // Fix temperature symbol
-            value = value.Replace("øC", "°C");
-            value = value.Replace("ø", "°");
-            value = value.Replace("°C", "°C"); // Ensure proper degree symbol
-            
-            return value;
+            return EncodingHelper.FixEncoding(value);
         }
 
         private string EscapeCsv(string value)
