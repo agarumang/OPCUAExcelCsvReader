@@ -292,6 +292,28 @@ public class CalibrationDataExtractor
         {
         var data = new ExtractedCalibrationData();
         
+        // Check if file is .xls format (old Excel format)
+        string extension = Path.GetExtension(filePath).ToLower();
+        if (extension == ".xls")
+        {
+            Console.WriteLine("⚠️ Warning: .xls files (Excel 97-2003 format) are not fully supported.");
+            Console.WriteLine("   Please convert the file to .xlsx format or save it as CSV.");
+            Console.WriteLine("   Attempting to read as CSV format instead...");
+            Console.WriteLine();
+            
+            // Try to read as CSV as a fallback
+            try
+            {
+                return ExtractFromCsv(filePath);
+            }
+            catch (Exception csvEx)
+            {
+                Console.WriteLine($"❌ Error: Could not read .xls file as CSV either: {csvEx.Message}");
+                Console.WriteLine("   Solution: Please convert the .xls file to .xlsx format using Excel.");
+                return data;
+            }
+        }
+        
         try
         {
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
@@ -372,9 +394,76 @@ public class CalibrationDataExtractor
                 }
             }
         }
+        catch (OfficeOpenXml.ExcelErrorException ex)
+        {
+            Console.WriteLine($"❌ Excel Error: {ex.Message}");
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted"))
+            {
+                Console.WriteLine();
+                Console.WriteLine("   This error typically occurs when:");
+                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
+                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
+                Console.WriteLine("   3. The file is password-protected - Remove password protection");
+                Console.WriteLine();
+                Console.WriteLine("   Attempting to read as CSV format as fallback...");
+                try
+                {
+                    return ExtractFromCsv(filePath);
+                }
+                catch (Exception csvEx)
+                {
+                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
+                }
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted"))
+            {
+                Console.WriteLine($"❌ Error: Cannot read this Excel file format.");
+                Console.WriteLine();
+                Console.WriteLine("   This error typically occurs when:");
+                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
+                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
+                Console.WriteLine("   3. The file is password-protected - Remove password protection");
+                Console.WriteLine();
+                Console.WriteLine("   Attempting to read as CSV format as fallback...");
+                try
+                {
+                    return ExtractFromCsv(filePath);
+                }
+                catch (Exception csvEx)
+                {
+                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"❌ Error reading Excel file: {ex.Message}");
+            }
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading Excel file: {ex.Message}");
+            Console.WriteLine($"❌ Error reading Excel file: {ex.Message}");
+            if (ex.Message.Contains("OLE compound document") || ex.Message.Contains("encrypted") || 
+                ex.Message.Contains("compound document") || ex.Message.Contains("password"))
+            {
+                Console.WriteLine();
+                Console.WriteLine("   This error typically occurs when:");
+                Console.WriteLine("   1. The file is in .xls format (Excel 97-2003) - Please convert to .xlsx");
+                Console.WriteLine("   2. The file is corrupted - Try opening it in Excel and saving again");
+                Console.WriteLine("   3. The file is password-protected - Remove password protection");
+                Console.WriteLine();
+                Console.WriteLine("   Attempting to read as CSV format as fallback...");
+                try
+                {
+                    return ExtractFromCsv(filePath);
+                }
+                catch (Exception csvEx)
+                {
+                    Console.WriteLine($"   ❌ Could not read as CSV: {csvEx.Message}");
+                }
+            }
         }
         
         return data;
