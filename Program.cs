@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
 using System.Linq;
 using System.Threading.Tasks;
 using OfficeOpenXml;
@@ -11,31 +10,34 @@ namespace ConsoleApp1
     class Program
     {
 
-        [STAThread]
         static void Main(string[] args)
         {
             try
             {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-
                 // Load configuration
                 ConfigurationManager.LoadConfiguration();
                 var configuration = ConfigurationManager.Configuration;
 
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Title = "Select a Calibration Report File (CSV or Excel)";
-                openFileDialog.Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx;*.xls)|*.xlsx;*.xls|All files (*.*)|*.*";
+                string filePath = null;
 
-                if (openFileDialog.ShowDialog() != DialogResult.OK)
+                // Check if file path is provided as command line argument
+                if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
                 {
-                    return;
+                    filePath = args[0];
+                }
+                else
+                {
+                    // Prompt user for file path
+                    Console.WriteLine("Enter the path to the calibration report file (CSV or Excel):");
+                    filePath = Console.ReadLine();
                 }
 
-                string filePath = openFileDialog.FileName;
-
-                if (!File.Exists(filePath))
+                if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 {
+                    Console.WriteLine("Error: File not found or path is empty.");
+                    Console.WriteLine("Usage: ConsoleApp1.exe [filepath]");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
                     return;
                 }
 
@@ -115,7 +117,7 @@ namespace ConsoleApp1
 
     }
 
-public class ExtractedCalibrationData
+    public class ExtractedCalibrationData
 {
     public ZeroCellVolumeData ZeroCellVolume { get; set; } = new ZeroCellVolumeData();
     public VolumeCalibrationData VolumeCalibration { get; set; } = new VolumeCalibrationData();
@@ -174,9 +176,9 @@ public class VolumeCalibrationCycleData
     public string Deviation { get; set; } = "";
     public string ExpansionVolume { get; set; } = "";
     public string ExpansionDeviation { get; set; } = "";
-}
+    }
 
-public class CalibrationDataExtractor
+    public class CalibrationDataExtractor
 {
     public ExtractedCalibrationData ExtractRequiredData(string filePath)
     {
@@ -233,13 +235,13 @@ public class CalibrationDataExtractor
             // Check for section headers
             foreach (var field in leftFields)
             {
-                if (field.Contains("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase))
+                if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     zeroCellVolumeHeaderFound = true;
                     inZeroCellVolumeSection = true;
                     inVolumeCalibrationSection = false;
                 }
-                if (field.Contains("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase))
+                if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     zeroCellVolumeReportFound = true;
                 }
@@ -247,13 +249,13 @@ public class CalibrationDataExtractor
 
             foreach (var field in rightFields)
             {
-                if (field.Contains("Volume Calibration Header", StringComparison.OrdinalIgnoreCase))
+                if (field.IndexOf("Volume Calibration Header", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     volumeCalibrationHeaderFound = true;
                     inVolumeCalibrationSection = true;
                     inZeroCellVolumeSection = false;
                 }
-                if (field.Contains("Volume Calibration Report", StringComparison.OrdinalIgnoreCase))
+                if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     volumeCalibrationReportFound = true;
                 }
@@ -281,7 +283,7 @@ public class CalibrationDataExtractor
         
         try
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
             
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
@@ -332,17 +334,17 @@ public class CalibrationDataExtractor
 
                         foreach (var field in leftFields)
                         {
-                            if (field.Contains("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase))
+                            if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
                                 zeroCellVolumeHeaderFound = true;
-                            if (field.Contains("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase))
+                            if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                 zeroCellVolumeReportFound = true;
                         }
 
                         foreach (var field in rightFields)
                         {
-                            if (field.Contains("Volume Calibration Header", StringComparison.OrdinalIgnoreCase))
+                            if (field.IndexOf("Volume Calibration Header", StringComparison.OrdinalIgnoreCase) >= 0)
                                 volumeCalibrationHeaderFound = true;
-                            if (field.Contains("Volume Calibration Report", StringComparison.OrdinalIgnoreCase))
+                            if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                 volumeCalibrationReportFound = true;
                         }
 
@@ -480,7 +482,7 @@ public class CalibrationDataExtractor
 
     private void ExtractFieldValue(string field, string label, ref string target)
     {
-        if (string.IsNullOrEmpty(target) && field.Contains(label, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(target) && field.IndexOf(label, StringComparison.OrdinalIgnoreCase) >= 0)
         {
             var index = field.IndexOf(label, StringComparison.OrdinalIgnoreCase);
             if (index >= 0)
@@ -560,5 +562,4 @@ public class CalibrationDataExtractor
 
         return field;
     }
-}
 }
