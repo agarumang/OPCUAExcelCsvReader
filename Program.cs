@@ -129,89 +129,89 @@ namespace ConsoleApp1
     }
 
     public class ExtractedCalibrationData
-{
-    public ZeroCellVolumeData ZeroCellVolume { get; set; } = new ZeroCellVolumeData();
-    public VolumeCalibrationData VolumeCalibration { get; set; } = new VolumeCalibrationData();
-}
+    {
+        public ZeroCellVolumeData ZeroCellVolume { get; set; } = new ZeroCellVolumeData();
+        public VolumeCalibrationData VolumeCalibration { get; set; } = new VolumeCalibrationData();
+    }
 
-public class ZeroCellVolumeData
-{
-    public string ChamberInsert { get; set; } = "";
-    public string AnalysisStart { get; set; } = "";
-    public string AnalysisEnd { get; set; } = "";
-    public string Temperature { get; set; } = "";
-    public string NumberOfPurges { get; set; } = "";
-    public string PurgeFillPressure { get; set; } = "";
-    public string NumberOfCycles { get; set; } = "";
-    public string CycleFillPressure { get; set; } = "";
-    public string EquilibRate { get; set; } = "";
-    public string ExpansionVolume { get; set; } = "";
-    public List<CycleData> Cycles { get; set; } = new List<CycleData>();
-    public string AverageOffset { get; set; } = "";
-    public string StandardDeviation { get; set; } = "";
-    public string AverageCellVolume { get; set; } = "";
-}
+    public class ZeroCellVolumeData
+    {
+        public string ChamberInsert { get; set; } = "";
+        public string AnalysisStart { get; set; } = "";
+        public string AnalysisEnd { get; set; } = "";
+        public string Temperature { get; set; } = "";
+        public string NumberOfPurges { get; set; } = "";
+        public string PurgeFillPressure { get; set; } = "";
+        public string NumberOfCycles { get; set; } = "";
+        public string CycleFillPressure { get; set; } = "";
+        public string EquilibRate { get; set; } = "";
+        public string ExpansionVolume { get; set; } = "";
+        public List<CycleData> Cycles { get; set; } = new List<CycleData>();
+        public string AverageOffset { get; set; } = "";
+        public string StandardDeviation { get; set; } = "";
+        public string AverageCellVolume { get; set; } = "";
+    }
 
-public class VolumeCalibrationData
-{
-    public string ChamberInsert { get; set; } = "";
-    public string AnalysisStart { get; set; } = "";
-    public string AnalysisEnd { get; set; } = "";
-    public string Temperature { get; set; } = "";
-    public string Reported { get; set; } = "";
-    public string VolOfCalStandard { get; set; } = "";
-    public string NumberOfPurges { get; set; } = "";
-    public string PurgeFillPressure { get; set; } = "";
-    public string NumberOfCycles { get; set; } = "";
-    public string CycleFillPressure { get; set; } = "";
-    public string EquilibRate { get; set; } = "";
-    public List<VolumeCalibrationCycleData> Cycles { get; set; } = new List<VolumeCalibrationCycleData>();
-    public string AverageOffset { get; set; } = "";
-    public string StandardDeviation { get; set; } = "";
-    public string AverageScaleFactor { get; set; } = "";
-    public string AverageCellVolume { get; set; } = "";
-    public string AverageExpansionVolume { get; set; } = "";
-}
+    public class VolumeCalibrationData
+    {
+        public string ChamberInsert { get; set; } = "";
+        public string AnalysisStart { get; set; } = "";
+        public string AnalysisEnd { get; set; } = "";
+        public string Temperature { get; set; } = "";
+        public string Reported { get; set; } = "";
+        public string VolOfCalStandard { get; set; } = "";
+        public string NumberOfPurges { get; set; } = "";
+        public string PurgeFillPressure { get; set; } = "";
+        public string NumberOfCycles { get; set; } = "";
+        public string CycleFillPressure { get; set; } = "";
+        public string EquilibRate { get; set; } = "";
+        public List<VolumeCalibrationCycleData> Cycles { get; set; } = new List<VolumeCalibrationCycleData>();
+        public string AverageOffset { get; set; } = "";
+        public string StandardDeviation { get; set; } = "";
+        public string AverageScaleFactor { get; set; } = "";
+        public string AverageCellVolume { get; set; } = "";
+        public string AverageExpansionVolume { get; set; } = "";
+    }
 
-public class CycleData
-{
-    public string CycleNumber { get; set; } = "";
-    public string CellVolume { get; set; } = "";
-    public string Deviation { get; set; } = "";
-}
+    public class CycleData
+    {
+        public string CycleNumber { get; set; } = "";
+        public string CellVolume { get; set; } = "";
+        public string Deviation { get; set; } = "";
+    }
 
-public class VolumeCalibrationCycleData
-{
-    public string CycleNumber { get; set; } = "";
-    public string CellVolume { get; set; } = "";
-    public string Deviation { get; set; } = "";
-    public string ExpansionVolume { get; set; } = "";
-    public string ExpansionDeviation { get; set; } = "";
+    public class VolumeCalibrationCycleData
+    {
+        public string CycleNumber { get; set; } = "";
+        public string CellVolume { get; set; } = "";
+        public string Deviation { get; set; } = "";
+        public string ExpansionVolume { get; set; } = "";
+        public string ExpansionDeviation { get; set; } = "";
     }
 
     public class CalibrationDataExtractor
-{
-    public ExtractedCalibrationData ExtractRequiredData(string filePath)
     {
-        var data = new ExtractedCalibrationData();
-        
-        // Check file extension to determine file type
-        string extension = Path.GetExtension(filePath).ToLower();
-        
-        if (extension == ".xlsx" || extension == ".xls")
+        public ExtractedCalibrationData ExtractRequiredData(string filePath)
         {
-            // Read from Excel file
-            return ExtractFromExcel(filePath);
+            var data = new ExtractedCalibrationData();
+            
+            // Check file extension to determine file type
+            string extension = Path.GetExtension(filePath).ToLower();
+            
+            if (extension == ".xlsx" || extension == ".xls")
+            {
+                // Read from Excel file
+                return ExtractFromExcel(filePath);
+            }
+            else
+            {
+                // Read from CSV file
+                return ExtractFromCsv(filePath);
+            }
         }
-        else
-        {
-            // Read from CSV file
-            return ExtractFromCsv(filePath);
-        }
-    }
 
-    private ExtractedCalibrationData ExtractFromCsv(string filePath)
-    {
+        private ExtractedCalibrationData ExtractFromCsv(string filePath)
+        {
         var data = new ExtractedCalibrationData();
         var lines = File.ReadAllLines(filePath);
         
@@ -288,8 +288,8 @@ public class VolumeCalibrationCycleData
         return data;
     }
 
-    private ExtractedCalibrationData ExtractFromExcel(string filePath)
-    {
+        private ExtractedCalibrationData ExtractFromExcel(string filePath)
+        {
         var data = new ExtractedCalibrationData();
         
         try
@@ -380,8 +380,8 @@ public class VolumeCalibrationCycleData
         return data;
     }
 
-    private void ExtractZeroCellVolumeData(string[] fields, ZeroCellVolumeData data, bool inReportSection)
-    {
+        private void ExtractZeroCellVolumeData(string[] fields, ZeroCellVolumeData data, bool inReportSection)
+        {
         if (fields == null || fields.Length == 0) return;
 
         for (int i = 0; i < fields.Length; i++)
@@ -485,8 +485,8 @@ public class VolumeCalibrationCycleData
         }
     }
 
-    private void ExtractVolumeCalibrationData(string[] fields, VolumeCalibrationData data, bool inReportSection)
-    {
+        private void ExtractVolumeCalibrationData(string[] fields, VolumeCalibrationData data, bool inReportSection)
+        {
         if (fields == null || fields.Length == 0) return;
 
         for (int i = 0; i < fields.Length; i++)
@@ -607,8 +607,8 @@ public class VolumeCalibrationCycleData
         }
     }
 
-    private string ExtractFieldValue(string field, string label)
-    {
+        private string ExtractFieldValue(string field, string label)
+        {
         var index = field.IndexOf(label, StringComparison.OrdinalIgnoreCase);
         if (index >= 0)
         {
@@ -621,8 +621,8 @@ public class VolumeCalibrationCycleData
         return null;
     }
 
-    private bool IsTimeFormat(string field)
-    {
+        private bool IsTimeFormat(string field)
+        {
         if (string.IsNullOrEmpty(field)) return false;
 
         // Check for common time formats: dd-MM-yyyy HH:mm:ss or similar
@@ -631,8 +631,8 @@ public class VolumeCalibrationCycleData
                field.Length >= 16; // Minimum length for date-time
     }
 
-    private string GetDataWithFallback(string[] fields, params int[] columnIndices)
-    {
+        private string GetDataWithFallback(string[] fields, params int[] columnIndices)
+        {
         foreach (int index in columnIndices)
         {
             if (index >= 0 && index < fields.Length && !string.IsNullOrWhiteSpace(fields[index]))
@@ -643,8 +643,8 @@ public class VolumeCalibrationCycleData
         return "";
     }
 
-    private string[] ParseCsvLine(string line)
-    {
+        private string[] ParseCsvLine(string line)
+        {
         if (string.IsNullOrEmpty(line))
             return new string[0];
 
@@ -672,8 +672,8 @@ public class VolumeCalibrationCycleData
         return result.ToArray();
     }
 
-    private string CleanCsvField(string field)
-    {
+        private string CleanCsvField(string field)
+        {
         if (string.IsNullOrEmpty(field))
             return field;
 
@@ -686,5 +686,6 @@ public class VolumeCalibrationCycleData
         }
 
         return field;
+        }
     }
 }
