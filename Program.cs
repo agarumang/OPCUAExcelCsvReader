@@ -693,11 +693,20 @@ public class CalibrationDataExtractor
         {
             if (fields == null || fields.Length == 0) return;
 
-            // Check if this is a cycle row (first field is a number)
+            // Check if this is a cycle row (first field is a number, or second field if first is empty)
             // Extract cycles when we're in the report section
             if (inReportSection && fields.Length > 0)
             {
-                var firstField = fields[0].Trim();
+                // Check first field, or second field if first is empty (handles leading comma case)
+                string firstField = fields[0].Trim();
+                int cycleFieldIndex = 0;
+                
+                // If first field is empty, check second field (handles cases like ",1,39.7419...")
+                if (string.IsNullOrEmpty(firstField) && fields.Length > 1)
+                {
+                    firstField = fields[1].Trim();
+                    cycleFieldIndex = 1;
+                }
                 
                 // Skip header rows
                 if (firstField.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0 || 
@@ -706,23 +715,24 @@ public class CalibrationDataExtractor
                     return;
                 }
                 
-                // Check if first field is a cycle number (integer)
+                // Check if the field is a cycle number (integer)
                 if (int.TryParse(firstField, out int cycleNumber))
                 {
                     // This is a cycle row - parse the complete row
-                    // Extract cycle data even if some fields are empty
+                    // Adjust field indices if we started from second field
                     var cycle = new VolumeCalibrationCycleData
                     {
                         CycleNumber = firstField,
-                        CellVolume = fields.Length > 1 ? fields[1].Trim() : "",
-                        Deviation = fields.Length > 2 ? fields[2].Trim() : "",
-                        ExpansionVolume = fields.Length > 3 ? fields[3].Trim() : "",
-                        ExpansionDeviation = fields.Length > 4 ? fields[4].Trim() : ""
+                        CellVolume = fields.Length > cycleFieldIndex + 1 ? fields[cycleFieldIndex + 1].Trim() : "",
+                        Deviation = fields.Length > cycleFieldIndex + 2 ? fields[cycleFieldIndex + 2].Trim() : "",
+                        ExpansionVolume = fields.Length > cycleFieldIndex + 3 ? fields[cycleFieldIndex + 3].Trim() : "",
+                        ExpansionDeviation = fields.Length > cycleFieldIndex + 4 ? fields[cycleFieldIndex + 4].Trim() : ""
                     };
                     // Add cycle as long as we have a valid cycle number
                     if (!string.IsNullOrEmpty(cycle.CycleNumber))
                     {
                         data.Cycles.Add(cycle);
+                        Console.WriteLine($"DEBUG: Added Volume Calibration Cycle: {cycle.CycleNumber}, CellVolume: {cycle.CellVolume}, Deviation: {cycle.Deviation}, ExpansionVolume: {cycle.ExpansionVolume}, ExpansionDeviation: {cycle.ExpansionDeviation}");
                     }
                     // Continue to extract header data even for cycle rows in case there's header data in the same row
                 }
