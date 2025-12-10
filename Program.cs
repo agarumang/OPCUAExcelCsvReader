@@ -142,11 +142,6 @@ namespace ConsoleApp1
         }
 
 
-
-
-
-
-
     }
 
 public class ExtractedCalibrationData
@@ -732,7 +727,6 @@ public class CalibrationDataExtractor
                     if (!string.IsNullOrEmpty(cycle.CycleNumber))
                     {
                         data.Cycles.Add(cycle);
-                        Console.WriteLine($"DEBUG: Added Volume Calibration Cycle: {cycle.CycleNumber}, CellVolume: {cycle.CellVolume}, Deviation: {cycle.Deviation}, ExpansionVolume: {cycle.ExpansionVolume}, ExpansionDeviation: {cycle.ExpansionDeviation}");
                     }
                     // Continue to extract header data even for cycle rows in case there's header data in the same row
                 }

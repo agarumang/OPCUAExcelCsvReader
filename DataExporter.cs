@@ -80,12 +80,6 @@ namespace ConsoleApp1
                     writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))}");
                 }
             }
-            else
-            {
-                // Write a note if no cycles were found
-                writer.WriteLine();
-                writer.WriteLine("Cycles: (No cycles extracted)");
-            }
             
             writer.WriteLine();
             WriteField(writer, "Average Offset", FixEncoding(data.AverageOffset));
@@ -121,12 +115,6 @@ namespace ConsoleApp1
                 {
                     writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))},{EscapeCsv(FixEncoding(cycle.ExpansionVolume))},{EscapeCsv(FixEncoding(cycle.ExpansionDeviation))}");
                 }
-            }
-            else
-            {
-                // Write a note if no cycles were found
-                writer.WriteLine();
-                writer.WriteLine("Cycles: (No cycles extracted)");
             }
             
             writer.WriteLine();
