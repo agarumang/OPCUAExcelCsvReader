@@ -89,6 +89,8 @@ namespace ConsoleApp1
                 _session.Write(null, writeValues, out StatusCodeCollection results, out DiagnosticInfoCollection diagnostics);
 
                 var successCount = 0;
+                var failedNodes = new List<string>();
+                
                 for (int i = 0; i < results.Count && i < items.Count; i++)
                 {
                     var success = StatusCode.IsGood(results[i]);
@@ -99,7 +101,15 @@ namespace ConsoleApp1
                     }
                     else
                     {
-                        Console.WriteLine($"❌ {items[i].Description}: Failed - {results[i]}");
+                        var statusCode = results[i].ToString();
+                        Console.WriteLine($"❌ {items[i].Description}: Failed - {statusCode}");
+                        Console.WriteLine($"   Node ID: {items[i].NodeId}");
+                        
+                        // Track failed nodes for summary
+                        if (statusCode.Contains("BadNodeIdUnknown") || statusCode.Contains("BadNodeIdInvalid"))
+                        {
+                            failedNodes.Add($"{items[i].Description} -> {items[i].NodeId}");
+                        }
                     }
                 }
 
@@ -109,6 +119,30 @@ namespace ConsoleApp1
                 if (!allSuccess)
                 {
                     LogDiagnostics(diagnostics);
+                    
+                    // Provide helpful summary if all or most writes failed
+                    if (successCount == 0 || failedNodes.Count > items.Count * 0.8)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("⚠️ WARNING: Most or all writes failed with BadNodeIdUnknown");
+                        Console.WriteLine("   This means the OPC UA nodes don't exist in Kepware.");
+                        Console.WriteLine();
+                        Console.WriteLine("   To fix this:");
+                        Console.WriteLine("   1. Open Kepware and verify the node IDs exist");
+                        Console.WriteLine("   2. Check the namespace index (ns=2) is correct");
+                        Console.WriteLine("   3. Verify the node path matches: Channel1.Device1.ZeroCellVolume.*");
+                        Console.WriteLine("   4. Create the missing nodes in Kepware if they don't exist");
+                        Console.WriteLine("   5. Update appsettings.json with the correct node IDs");
+                        Console.WriteLine();
+                        if (failedNodes.Count > 0 && failedNodes.Count <= 10)
+                        {
+                            Console.WriteLine("   Failed Node IDs:");
+                            foreach (var failed in failedNodes.Take(10))
+                            {
+                                Console.WriteLine($"     - {failed}");
+                            }
+                        }
+                    }
                 }
 
                 return allSuccess;

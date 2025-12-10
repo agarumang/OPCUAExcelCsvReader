@@ -60,9 +60,26 @@ namespace ConsoleApp1
                 var extractor = new CalibrationDataExtractor();
                 var extractedData = extractor.ExtractRequiredData(filePath);
 
+                // Display extraction summary
+                Console.WriteLine();
+                Console.WriteLine("📊 Data Extraction Summary:");
+                Console.WriteLine($"   Zero Cell Volume Header:");
+                Console.WriteLine($"     - Chamber Insert: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.ChamberInsert) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Reported: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.Reported) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Cycles extracted: {extractedData.ZeroCellVolume.Cycles.Count}");
+                Console.WriteLine($"     - Standard Deviations: {extractedData.ZeroCellVolume.StandardDeviations.Count}");
+                Console.WriteLine($"   Volume Calibration Header:");
+                Console.WriteLine($"     - Chamber Insert: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.ChamberInsert) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Vol. of Cal. Standard: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.VolOfCalStandard) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Cycles extracted: {extractedData.VolumeCalibration.Cycles.Count}");
+                Console.WriteLine($"     - Standard Deviations: {extractedData.VolumeCalibration.StandardDeviations.Count}");
+                Console.WriteLine();
+
                 // Save data to CSV file
                 var dataExporter = new DataExporter();
                 dataExporter.SaveToCsv(extractedData, filePath);
+                Console.WriteLine("✅ Data exported to CSV file successfully!");
+                Console.WriteLine();
 
                 // Write to OPC UA (Kepware)
                 WriteToOpcUaAsync(extractedData, configuration).GetAwaiter().GetResult();
@@ -557,9 +574,8 @@ public class CalibrationDataExtractor
         {
             if (fields == null || fields.Length == 0) return;
 
-            bool isCycleRow = false;
-
             // Check if this is a cycle row (first field is a number)
+            // Extract cycles when we're in the report section
             if (inReportSection && fields.Length > 0)
             {
                 var firstField = fields[0].Trim();
@@ -574,20 +590,18 @@ public class CalibrationDataExtractor
                 // Check if first field is a cycle number (integer)
                 if (int.TryParse(firstField, out int cycleNumber))
                 {
-                    isCycleRow = true;
                     // This is a cycle row - parse the complete row
-                    if (fields.Length >= 3)
+                    // Extract cycle data even if some fields are empty
+                    var cycle = new CycleData
                     {
-                        var cycle = new CycleData
-                        {
-                            CycleNumber = firstField,
-                            CellVolume = fields[1].Trim(),
-                            Deviation = fields[2].Trim()
-                        };
-                        if (!string.IsNullOrEmpty(cycle.CellVolume))
-                        {
-                            data.Cycles.Add(cycle);
-                        }
+                        CycleNumber = firstField,
+                        CellVolume = fields.Length > 1 ? fields[1].Trim() : "",
+                        Deviation = fields.Length > 2 ? fields[2].Trim() : ""
+                    };
+                    // Add cycle as long as we have a valid cycle number
+                    if (!string.IsNullOrEmpty(cycle.CycleNumber))
+                    {
+                        data.Cycles.Add(cycle);
                     }
                     // Continue to extract header data even for cycle rows in case there's header data in the same row
                 }
@@ -679,43 +693,38 @@ public class CalibrationDataExtractor
         {
             if (fields == null || fields.Length == 0) return;
 
-            bool isCycleRow = false;
-
             // Check if this is a cycle row (first field is a number)
             // Extract cycles when we're in the report section
             if (inReportSection && fields.Length > 0)
             {
                 var firstField = fields[0].Trim();
                 
-                // Skip header rows (but allow processing if it's just part of a multi-line header)
+                // Skip header rows
                 if (firstField.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0 || 
                     firstField == "Cycle#")
                 {
-                    // Don't return - might be part of a multi-line header, continue to check for header data
-                    // But skip cycle extraction for this row
+                    return;
                 }
-                else if (int.TryParse(firstField, out int cycleNumber))
+                
+                // Check if first field is a cycle number (integer)
+                if (int.TryParse(firstField, out int cycleNumber))
                 {
                     // This is a cycle row - parse the complete row
-                    isCycleRow = true;
-                    if (fields.Length >= 5)
+                    // Extract cycle data even if some fields are empty
+                    var cycle = new VolumeCalibrationCycleData
                     {
-                        var cycle = new VolumeCalibrationCycleData
-                        {
-                            CycleNumber = firstField,
-                            CellVolume = fields[1].Trim(),
-                            Deviation = fields[2].Trim(),
-                            ExpansionVolume = fields[3].Trim(),
-                            ExpansionDeviation = fields[4].Trim()
-                        };
-                        // Add cycle even if some fields are empty, as long as we have the cycle number
-                        if (!string.IsNullOrEmpty(cycle.CycleNumber))
-                        {
-                            data.Cycles.Add(cycle);
-                        }
+                        CycleNumber = firstField,
+                        CellVolume = fields.Length > 1 ? fields[1].Trim() : "",
+                        Deviation = fields.Length > 2 ? fields[2].Trim() : "",
+                        ExpansionVolume = fields.Length > 3 ? fields[3].Trim() : "",
+                        ExpansionDeviation = fields.Length > 4 ? fields[4].Trim() : ""
+                    };
+                    // Add cycle as long as we have a valid cycle number
+                    if (!string.IsNullOrEmpty(cycle.CycleNumber))
+                    {
+                        data.Cycles.Add(cycle);
                     }
-                    // Don't return here - continue to extract header data even for cycle rows
-                    // in case there's header data in the same row
+                    // Continue to extract header data even for cycle rows in case there's header data in the same row
                 }
             }
 

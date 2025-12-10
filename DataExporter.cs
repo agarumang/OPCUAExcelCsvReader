@@ -43,6 +43,11 @@ namespace ConsoleApp1
                     writer.WriteLine("=== VOLUME CALIBRATION HEADER ===");
                     WriteVolumeCalibrationData(writer, data.VolumeCalibration);
                 }
+                
+                // Display export summary
+                Console.WriteLine($"📄 CSV file saved to: {csvFilePath}");
+                Console.WriteLine($"   Zero Cell Volume cycles exported: {data.ZeroCellVolume.Cycles.Count}");
+                Console.WriteLine($"   Volume Calibration cycles exported: {data.VolumeCalibration.Cycles.Count}");
             }
             catch (Exception ex)
             {
@@ -74,6 +79,12 @@ namespace ConsoleApp1
                 {
                     writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))}");
                 }
+            }
+            else
+            {
+                // Write a note if no cycles were found
+                writer.WriteLine();
+                writer.WriteLine("Cycles: (No cycles extracted)");
             }
             
             writer.WriteLine();
@@ -110,6 +121,12 @@ namespace ConsoleApp1
                 {
                     writer.WriteLine($"{EscapeCsv(cycle.CycleNumber)},{EscapeCsv(FixEncoding(cycle.CellVolume))},{EscapeCsv(FixEncoding(cycle.Deviation))},{EscapeCsv(FixEncoding(cycle.ExpansionVolume))},{EscapeCsv(FixEncoding(cycle.ExpansionDeviation))}");
                 }
+            }
+            else
+            {
+                // Write a note if no cycles were found
+                writer.WriteLine();
+                writer.WriteLine("Cycles: (No cycles extracted)");
             }
             
             writer.WriteLine();
