@@ -35,6 +35,7 @@ namespace ConsoleApp1
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_AnalysisStart, data.AnalysisStart, "Zero Cell Volume - Analysis Start");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_AnalysisEnd, data.AnalysisEnd, "Zero Cell Volume - Analysis End");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_Temperature, data.Temperature, "Zero Cell Volume - Temperature");
+            AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_Reported, data.Reported, "Zero Cell Volume - Reported");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_NumberOfPurges, data.NumberOfPurges, "Zero Cell Volume - Number of Purges");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_PurgeFillPressure, data.PurgeFillPressure, "Zero Cell Volume - Purge Fill Pressure");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_NumberOfCycles, data.NumberOfCycles, "Zero Cell Volume - Number of Cycles");

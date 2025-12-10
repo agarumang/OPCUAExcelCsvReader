@@ -144,6 +144,7 @@ public class ExtractedCalibrationData
         public string AnalysisStart { get; set; } = "";
         public string AnalysisEnd { get; set; } = "";
         public string Temperature { get; set; } = "";
+        public string Reported { get; set; } = "";
         public string NumberOfPurges { get; set; } = "";
         public string PurgeFillPressure { get; set; } = "";
         public string NumberOfCycles { get; set; } = "";
@@ -277,12 +278,16 @@ public class CalibrationDataExtractor
             }
 
             // Extract Zero Cell Volume data (left side)
+            // Continue extracting as long as we're in the section or have found the header
+            // Keep extracting even after report section starts to capture all header data
             if (inZeroCellVolumeSection || zeroCellVolumeHeaderFound)
             {
                 ExtractZeroCellVolumeData(leftFields, line, data.ZeroCellVolume, zeroCellVolumeReportFound);
             }
 
             // Extract Volume Calibration data (right side)
+            // Continue extracting as long as we're in the section or have found the header
+            // Keep extracting even after report section starts to capture all header data
             if (inVolumeCalibrationSection || volumeCalibrationHeaderFound)
             {
                 ExtractVolumeCalibrationData(rightFields, line, data.VolumeCalibration, volumeCalibrationReportFound);
@@ -609,6 +614,11 @@ public class CalibrationDataExtractor
                     var value = ExtractFieldValueWithFallback(fields, i, "Temperature:");
                     if (value != null) data.Temperature = EncodingHelper.FixEncoding(value);
                 }
+                if (string.IsNullOrEmpty(data.Reported))
+                {
+                    var value = ExtractFieldValueWithFallback(fields, i, "Reported:");
+                    if (value != null) data.Reported = value;
+                }
                 if (string.IsNullOrEmpty(data.NumberOfPurges))
                 {
                     var value = ExtractFieldValueWithFallback(fields, i, "Number of Purges:");
@@ -658,6 +668,8 @@ public class CalibrationDataExtractor
         {
             if (fields == null || fields.Length == 0) return;
 
+            bool isCycleRow = false;
+
             // Check if this is a cycle row (first field is a number)
             if (inReportSection && fields.Length > 0)
             {
@@ -673,6 +685,7 @@ public class CalibrationDataExtractor
                 // Check if first field is a cycle number (integer)
                 if (int.TryParse(firstField, out int cycleNumber))
                 {
+                    isCycleRow = true;
                     // This is a cycle row - parse the complete row
                     if (fields.Length >= 5)
                     {
@@ -689,10 +702,13 @@ public class CalibrationDataExtractor
                             data.Cycles.Add(cycle);
                         }
                     }
-                    return; // Don't process cycle rows as header data
+                    // Don't return here - continue to extract header data even for cycle rows
+                    // in case there's header data in the same row
                 }
             }
 
+            // Always extract header information, even if we're in report section
+            // This ensures we capture all header data that might appear after the report section starts
             // Extract Standard Deviation values first (once per line, all occurrences)
             ExtractAllStandardDeviations(fields, data.StandardDeviations);
 

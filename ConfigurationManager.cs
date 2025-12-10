@@ -32,6 +32,7 @@ namespace ConsoleApp1
         public string ZeroCellVolume_AnalysisStart { get; set; } = "";
         public string ZeroCellVolume_AnalysisEnd { get; set; } = "";
         public string ZeroCellVolume_Temperature { get; set; } = "";
+        public string ZeroCellVolume_Reported { get; set; } = "";
         public string ZeroCellVolume_NumberOfPurges { get; set; } = "";
         public string ZeroCellVolume_PurgeFillPressure { get; set; } = "";
         public string ZeroCellVolume_NumberOfCycles { get; set; } = "";

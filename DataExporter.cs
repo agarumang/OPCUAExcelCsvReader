@@ -56,6 +56,7 @@ namespace ConsoleApp1
             WriteField(writer, "Analysis Start", data.AnalysisStart);
             WriteField(writer, "Analysis End", data.AnalysisEnd);
             WriteField(writer, "Temperature", FixEncoding(data.Temperature));
+            WriteField(writer, "Reported", data.Reported);
             WriteField(writer, "Number of Purges", data.NumberOfPurges);
             WriteField(writer, "Purge fill pressure", data.PurgeFillPressure);
             WriteField(writer, "Number of cycles", data.NumberOfCycles);
