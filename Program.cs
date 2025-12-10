@@ -231,7 +231,7 @@ public class CalibrationDataExtractor
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
 
-            // Check if line contains pipe separator
+            // Always split by pipe separator (sections are always side-by-side)
             var pipeIndex = line.IndexOf('|');
             var leftFields = new string[0];
             var rightFields = new string[0];
@@ -245,7 +245,9 @@ public class CalibrationDataExtractor
             }
             else
             {
+                // If no pipe, treat entire line as left side (shouldn't happen, but handle gracefully)
                 leftFields = ParseCsvLine(line);
+                rightFields = new string[0];
             }
 
             // Check for section headers
@@ -255,12 +257,10 @@ public class CalibrationDataExtractor
                 {
                     zeroCellVolumeHeaderFound = true;
                     inZeroCellVolumeSection = true;
-                    // Don't reset inVolumeCalibrationSection here - both sections can be active
                 }
                 if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     zeroCellVolumeReportFound = true;
-                    // Don't reset inZeroCellVolumeSection - keep extracting header data
                 }
             }
 
@@ -270,18 +270,15 @@ public class CalibrationDataExtractor
                 {
                     volumeCalibrationHeaderFound = true;
                     inVolumeCalibrationSection = true;
-                    // Don't reset inZeroCellVolumeSection here - both sections can be active
                 }
                 if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     volumeCalibrationReportFound = true;
-                    // Don't reset inVolumeCalibrationSection - keep extracting header data
                 }
             }
 
             // Extract Zero Cell Volume data (left side)
             // Continue extracting as long as we've found the header
-            // Keep extracting even after report section starts to capture all header data
             if (zeroCellVolumeHeaderFound)
             {
                 ExtractZeroCellVolumeData(leftFields, line, data.ZeroCellVolume, zeroCellVolumeReportFound);
@@ -289,7 +286,6 @@ public class CalibrationDataExtractor
 
             // Extract Volume Calibration data (right side)
             // Continue extracting as long as we've found the header
-            // Keep extracting even after report section starts to capture all header data
             if (volumeCalibrationHeaderFound)
             {
                 ExtractVolumeCalibrationData(rightFields, line, data.VolumeCalibration, volumeCalibrationReportFound);
@@ -348,7 +344,7 @@ public class CalibrationDataExtractor
                             
                             if (rowData.Count > 0)
                             {
-                                // Check if row contains pipe separator
+                                // Always split by pipe separator (sections are always side-by-side)
                                 var rowText = string.Join(",", rowData);
                                 var pipeIndex = rowText.IndexOf('|');
                                 var leftFields = new string[0];
@@ -363,7 +359,9 @@ public class CalibrationDataExtractor
                                 }
                                 else
                                 {
+                                    // If no pipe, treat entire row as left side (shouldn't happen, but handle gracefully)
                                     leftFields = rowData.ToArray();
+                                    rightFields = new string[0];
                                 }
 
                                 // Check for section headers
@@ -373,12 +371,10 @@ public class CalibrationDataExtractor
                                     {
                                         zeroCellVolumeHeaderFound = true;
                                         inZeroCellVolumeSection = true;
-                                        // Don't reset inVolumeCalibrationSection - both sections can be active
                                     }
                                     if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
                                         zeroCellVolumeReportFound = true;
-                                        // Don't reset inZeroCellVolumeSection - keep extracting header data
                                     }
                                 }
 
@@ -388,24 +384,20 @@ public class CalibrationDataExtractor
                                     {
                                         volumeCalibrationHeaderFound = true;
                                         inVolumeCalibrationSection = true;
-                                        // Don't reset inZeroCellVolumeSection - both sections can be active
                                     }
                                     if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
                                         volumeCalibrationReportFound = true;
-                                        // Don't reset inVolumeCalibrationSection - keep extracting header data
                                     }
                                 }
 
                                 // Extract Zero Cell Volume data (left side)
-                                // Continue extracting as long as we've found the header
                                 if (zeroCellVolumeHeaderFound)
                                 {
                                     ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
                                 }
 
                                 // Extract Volume Calibration data (right side)
-                                // Continue extracting as long as we've found the header
                                 if (volumeCalibrationHeaderFound)
                                 {
                                     ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
@@ -490,6 +482,7 @@ public class CalibrationDataExtractor
                         
                         if (rowData.Count > 0)
                         {
+                            // Always split by pipe separator (sections are always side-by-side)
                             var rowText = string.Join(",", rowData);
                             var pipeIndex = rowText.IndexOf('|');
                             var leftFields = new string[0];
@@ -504,21 +497,22 @@ public class CalibrationDataExtractor
                             }
                             else
                             {
+                                // If no pipe, treat entire row as left side (shouldn't happen, but handle gracefully)
                                 leftFields = rowData.ToArray();
+                                rightFields = new string[0];
                             }
 
+                            // Check for section headers
                             foreach (var field in leftFields)
                             {
                                 if (field.IndexOf("Zero Cell Volume Header", StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
                                     zeroCellVolumeHeaderFound = true;
                                     inZeroCellVolumeSection = true;
-                                    // Don't reset inVolumeCalibrationSection - both sections can be active
                                 }
                                 if (field.IndexOf("Zero Cell Volume Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
                                     zeroCellVolumeReportFound = true;
-                                    // Don't reset inZeroCellVolumeSection - keep extracting header data
                                 }
                             }
 
@@ -528,24 +522,20 @@ public class CalibrationDataExtractor
                                 {
                                     volumeCalibrationHeaderFound = true;
                                     inVolumeCalibrationSection = true;
-                                    // Don't reset inZeroCellVolumeSection - both sections can be active
                                 }
                                 if (field.IndexOf("Volume Calibration Report", StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
                                     volumeCalibrationReportFound = true;
-                                    // Don't reset inVolumeCalibrationSection - keep extracting header data
                                 }
                             }
 
                             // Extract Zero Cell Volume data (left side)
-                            // Continue extracting as long as we've found the header
                             if (zeroCellVolumeHeaderFound)
                             {
                                 ExtractZeroCellVolumeData(leftFields, rowText, data.ZeroCellVolume, zeroCellVolumeReportFound);
                             }
 
                             // Extract Volume Calibration data (right side)
-                            // Continue extracting as long as we've found the header
                             if (volumeCalibrationHeaderFound)
                             {
                                 ExtractVolumeCalibrationData(rightFields, rowText, data.VolumeCalibration, volumeCalibrationReportFound);
@@ -692,22 +682,22 @@ public class CalibrationDataExtractor
             bool isCycleRow = false;
 
             // Check if this is a cycle row (first field is a number)
+            // Extract cycles when we're in the report section
             if (inReportSection && fields.Length > 0)
             {
                 var firstField = fields[0].Trim();
                 
-                // Skip header rows
+                // Skip header rows (but allow processing if it's just part of a multi-line header)
                 if (firstField.IndexOf("Cycle", StringComparison.OrdinalIgnoreCase) >= 0 || 
                     firstField == "Cycle#")
                 {
-                    return;
+                    // Don't return - might be part of a multi-line header, continue to check for header data
+                    // But skip cycle extraction for this row
                 }
-                
-                // Check if first field is a cycle number (integer)
-                if (int.TryParse(firstField, out int cycleNumber))
+                else if (int.TryParse(firstField, out int cycleNumber))
                 {
-                    isCycleRow = true;
                     // This is a cycle row - parse the complete row
+                    isCycleRow = true;
                     if (fields.Length >= 5)
                     {
                         var cycle = new VolumeCalibrationCycleData
@@ -718,7 +708,8 @@ public class CalibrationDataExtractor
                             ExpansionVolume = fields[3].Trim(),
                             ExpansionDeviation = fields[4].Trim()
                         };
-                        if (!string.IsNullOrEmpty(cycle.CellVolume))
+                        // Add cycle even if some fields are empty, as long as we have the cycle number
+                        if (!string.IsNullOrEmpty(cycle.CycleNumber))
                         {
                             data.Cycles.Add(cycle);
                         }
