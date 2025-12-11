@@ -43,13 +43,9 @@ namespace ConsoleApp1
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_EquilibRate, data.EquilibRate, "Zero Cell Volume - Equilib Rate");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_ExpansionVolume, data.ExpansionVolume, "Zero Cell Volume - Expansion Volume");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_AverageOffset, data.AverageOffset, "Zero Cell Volume - Average Offset");
-            // Write all Standard Deviations (comma-separated if multiple)
-            if (data.StandardDeviations.Count > 0)
-            {
-                var allStdDevs = string.Join(", ", data.StandardDeviations);
-                AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_StandardDeviation, allStdDevs, "Zero Cell Volume - Standard Deviation");
-            }
+            AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_OffsetStandardDeviation, data.OffsetStandardDeviation, "Zero Cell Volume - Offset Standard Deviation");
             AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_AverageCellVolume, data.AverageCellVolume, "Zero Cell Volume - Average Cell Volume");
+            AddIfNotEmpty(writeItems, _nodeMappings.ZeroCellVolume_CellVolumeStandardDeviation, data.CellVolumeStandardDeviation, "Zero Cell Volume - Cell Volume Standard Deviation");
 
             // Map cycle rows
             MapCycleRows(data.Cycles, writeItems, "ZeroCellVolume", 10);
@@ -69,15 +65,13 @@ namespace ConsoleApp1
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_CycleFillPressure, data.CycleFillPressure, "Volume Calibration - Cycle Fill Pressure");
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_EquilibRate, data.EquilibRate, "Volume Calibration - Equilib Rate");
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_AverageOffset, data.AverageOffset, "Volume Calibration - Average Offset");
-            // Write all Standard Deviations (comma-separated if multiple)
-            if (data.StandardDeviations.Count > 0)
-            {
-                var allStdDevs = string.Join(", ", data.StandardDeviations);
-                AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_StandardDeviation, allStdDevs, "Volume Calibration - Standard Deviation");
-            }
+            AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_OffsetStandardDeviation, data.OffsetStandardDeviation, "Volume Calibration - Offset Standard Deviation");
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_AverageScaleFactor, data.AverageScaleFactor, "Volume Calibration - Average Scale Factor");
+            AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_ScaleFactorStandardDeviation, data.ScaleFactorStandardDeviation, "Volume Calibration - Scale Factor Standard Deviation");
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_AverageCellVolume, data.AverageCellVolume, "Volume Calibration - Average Cell Volume");
+            AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_CellVolumeStandardDeviation, data.CellVolumeStandardDeviation, "Volume Calibration - Cell Volume Standard Deviation");
             AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_AverageExpansionVolume, data.AverageExpansionVolume, "Volume Calibration - Average Expansion Volume");
+            AddIfNotEmpty(writeItems, _nodeMappings.VolumeCalibration_ExpansionVolumeStandardDeviation, data.ExpansionVolumeStandardDeviation, "Volume Calibration - Expansion Volume Standard Deviation");
 
             // Map cycle rows
             MapVolumeCalibrationCycleRows(data.Cycles, writeItems, "VolumeCalibration", 10);

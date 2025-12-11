@@ -83,12 +83,9 @@ namespace ConsoleApp1
             
             writer.WriteLine();
             WriteField(writer, "Average Offset", FixEncoding(data.AverageOffset));
-            // Write all Standard Deviation values
-            foreach (var stdDev in data.StandardDeviations)
-            {
-                WriteField(writer, "Standard Deviation", FixEncoding(stdDev));
-            }
+            WriteField(writer, "Offset Standard Deviation", FixEncoding(data.OffsetStandardDeviation));
             WriteField(writer, "Average Cell Volume", FixEncoding(data.AverageCellVolume));
+            WriteField(writer, "Cell Volume Standard Deviation", FixEncoding(data.CellVolumeStandardDeviation));
         }
 
         private void WriteVolumeCalibrationData(StreamWriter writer, VolumeCalibrationData data)
@@ -119,14 +116,13 @@ namespace ConsoleApp1
             
             writer.WriteLine();
             WriteField(writer, "Average Offset", FixEncoding(data.AverageOffset));
-            // Write all Standard Deviation values
-            foreach (var stdDev in data.StandardDeviations)
-            {
-                WriteField(writer, "Standard Deviation", FixEncoding(stdDev));
-            }
+            WriteField(writer, "Offset Standard Deviation", FixEncoding(data.OffsetStandardDeviation));
             WriteField(writer, "Average Scale Factor", data.AverageScaleFactor);
+            WriteField(writer, "Scale Factor Standard Deviation", FixEncoding(data.ScaleFactorStandardDeviation));
             WriteField(writer, "Average Cell Volume", FixEncoding(data.AverageCellVolume));
+            WriteField(writer, "Cell Volume Standard Deviation", FixEncoding(data.CellVolumeStandardDeviation));
             WriteField(writer, "Average Expansion Volume", FixEncoding(data.AverageExpansionVolume));
+            WriteField(writer, "Expansion Volume Standard Deviation", FixEncoding(data.ExpansionVolumeStandardDeviation));
         }
 
         private void WriteField(StreamWriter writer, string fieldName, string value)

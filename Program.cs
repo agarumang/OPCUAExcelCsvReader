@@ -67,12 +67,16 @@ namespace ConsoleApp1
                 Console.WriteLine($"     - Chamber Insert: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.ChamberInsert) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine($"     - Reported: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.Reported) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine($"     - Cycles extracted: {extractedData.ZeroCellVolume.Cycles.Count}");
-                Console.WriteLine($"     - Standard Deviations: {extractedData.ZeroCellVolume.StandardDeviations.Count}");
+                Console.WriteLine($"     - Offset Standard Deviation: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.OffsetStandardDeviation) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Cell Volume Standard Deviation: {(string.IsNullOrEmpty(extractedData.ZeroCellVolume.CellVolumeStandardDeviation) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine($"   Volume Calibration Header:");
                 Console.WriteLine($"     - Chamber Insert: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.ChamberInsert) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine($"     - Vol. of Cal. Standard: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.VolOfCalStandard) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine($"     - Cycles extracted: {extractedData.VolumeCalibration.Cycles.Count}");
-                Console.WriteLine($"     - Standard Deviations: {extractedData.VolumeCalibration.StandardDeviations.Count}");
+                Console.WriteLine($"     - Offset Standard Deviation: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.OffsetStandardDeviation) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Scale Factor Standard Deviation: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.ScaleFactorStandardDeviation) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Cell Volume Standard Deviation: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.CellVolumeStandardDeviation) ? "❌ Missing" : "✅ Found")}");
+                Console.WriteLine($"     - Expansion Volume Standard Deviation: {(string.IsNullOrEmpty(extractedData.VolumeCalibration.ExpansionVolumeStandardDeviation) ? "❌ Missing" : "✅ Found")}");
                 Console.WriteLine();
 
                 // Save data to CSV file
@@ -165,8 +169,9 @@ public class ExtractedCalibrationData
         public string ExpansionVolume { get; set; } = "";
         public List<CycleData> Cycles { get; set; } = new List<CycleData>();
         public string AverageOffset { get; set; } = "";
-        public List<string> StandardDeviations { get; set; } = new List<string>();
+        public string OffsetStandardDeviation { get; set; } = "";
         public string AverageCellVolume { get; set; } = "";
+        public string CellVolumeStandardDeviation { get; set; } = "";
     }
 
     public class VolumeCalibrationData
@@ -184,10 +189,13 @@ public class ExtractedCalibrationData
         public string EquilibRate { get; set; } = "";
         public List<VolumeCalibrationCycleData> Cycles { get; set; } = new List<VolumeCalibrationCycleData>();
         public string AverageOffset { get; set; } = "";
-        public List<string> StandardDeviations { get; set; } = new List<string>();
+        public string OffsetStandardDeviation { get; set; } = "";
         public string AverageScaleFactor { get; set; } = "";
+        public string ScaleFactorStandardDeviation { get; set; } = "";
         public string AverageCellVolume { get; set; } = "";
+        public string CellVolumeStandardDeviation { get; set; } = "";
         public string AverageExpansionVolume { get; set; } = "";
+        public string ExpansionVolumeStandardDeviation { get; set; } = "";
     }
 
     public class CycleData
@@ -604,8 +612,8 @@ public class CalibrationDataExtractor
 
             // Always extract header information, even if we're in report section
             // This ensures we capture all header data that might appear after the report section starts
-            // Extract Standard Deviation values first (once per line, all occurrences)
-            ExtractAllStandardDeviations(fields, data.StandardDeviations);
+            // Extract Standard Deviation values based on context
+            ExtractStandardDeviationsForZeroCellVolume(fields, data);
 
             // Extract header information from all fields
             for (int i = 0; i < fields.Length; i++)
@@ -734,8 +742,8 @@ public class CalibrationDataExtractor
 
             // Always extract header information, even if we're in report section
             // This ensures we capture all header data that might appear after the report section starts
-            // Extract Standard Deviation values first (once per line, all occurrences)
-            ExtractAllStandardDeviations(fields, data.StandardDeviations);
+            // Extract Standard Deviation values based on context
+            ExtractStandardDeviationsForVolumeCalibration(fields, data);
 
             // Extract header information from all fields
             for (int i = 0; i < fields.Length; i++)
@@ -870,45 +878,59 @@ public class CalibrationDataExtractor
             return null;
         }
 
-        private void ExtractAllStandardDeviations(string[] fields, List<string> standardDeviations)
+        private void ExtractStandardDeviationsForZeroCellVolume(string[] fields, ZeroCellVolumeData data)
         {
-            // Extract all Standard Deviation values from this line
-            // Prevent duplicates only within the same line, but allow same value from different lines
-            // Use normalized values (trimmed) for comparison to catch duplicates with different whitespace
-            var foundInThisLine = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Extract Standard Deviation values based on context (what comes before "Standard Deviation:")
+            // For Zero Cell Volume: Offset Standard Deviation and Cell Volume Standard Deviation
+            string lineText = string.Join(" ", fields);
             
-            for (int i = 0; i < fields.Length; i++)
+            // Check for "Average Offset:" followed by "Standard Deviation:"
+            var offsetMatch = Regex.Match(lineText, @"Average\s+Offset:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (offsetMatch.Success && string.IsNullOrEmpty(data.OffsetStandardDeviation))
             {
-                var field = fields[i].Trim();
-                if (string.IsNullOrEmpty(field)) continue;
+                data.OffsetStandardDeviation = Regex.Replace(offsetMatch.Groups[1].Value, @"\s+", " ").Trim();
+            }
+            
+            // Check for "Average Cell Volume:" followed by "Standard Deviation:"
+            var cellVolumeMatch = Regex.Match(lineText, @"Average\s+Cell\s+Volume:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (cellVolumeMatch.Success && string.IsNullOrEmpty(data.CellVolumeStandardDeviation))
+            {
+                data.CellVolumeStandardDeviation = Regex.Replace(cellVolumeMatch.Groups[1].Value, @"\s+", " ").Trim();
+            }
+        }
 
-                var index = field.IndexOf("Standard Deviation:", StringComparison.OrdinalIgnoreCase);
-                if (index >= 0)
-                {
-                    // Check if value is in the same field after colon
-                    var value = field.Substring(index + "Standard Deviation:".Length).Trim();
-                    
-                    // If no value in same field, check next field
-                    if (string.IsNullOrEmpty(value) && i + 1 < fields.Length)
-                    {
-                        value = fields[i + 1].Trim();
-                    }
-                    
-                    // Normalize the value (trim and normalize whitespace)
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        // Normalize whitespace - replace multiple spaces with single space
-                        value = Regex.Replace(value, @"\s+", " ").Trim();
-                        
-                        // Only prevent duplicates within the same line
-                        // If same value appears in different lines, it will be added multiple times (as per requirement)
-                        if (!foundInThisLine.Contains(value))
-                        {
-                            standardDeviations.Add(value);
-                            foundInThisLine.Add(value);
-                        }
-                    }
-                }
+        private void ExtractStandardDeviationsForVolumeCalibration(string[] fields, VolumeCalibrationData data)
+        {
+            // Extract Standard Deviation values based on context (what comes before "Standard Deviation:")
+            // For Volume Calibration: Offset, Scale Factor, Cell Volume, and Expansion Volume Standard Deviations
+            string lineText = string.Join(" ", fields);
+            
+            // Check for "Average Offset:" followed by "Standard Deviation:"
+            var offsetMatch = Regex.Match(lineText, @"Average\s+Offset:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (offsetMatch.Success && string.IsNullOrEmpty(data.OffsetStandardDeviation))
+            {
+                data.OffsetStandardDeviation = Regex.Replace(offsetMatch.Groups[1].Value, @"\s+", " ").Trim();
+            }
+            
+            // Check for "Average Scale Factor:" followed by "Standard Deviation:"
+            var scaleFactorMatch = Regex.Match(lineText, @"Average\s+Scale\s+Factor:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (scaleFactorMatch.Success && string.IsNullOrEmpty(data.ScaleFactorStandardDeviation))
+            {
+                data.ScaleFactorStandardDeviation = Regex.Replace(scaleFactorMatch.Groups[1].Value, @"\s+", " ").Trim();
+            }
+            
+            // Check for "Average Cell Volume:" followed by "Standard Deviation:"
+            var cellVolumeMatch = Regex.Match(lineText, @"Average\s+Cell\s+Volume:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (cellVolumeMatch.Success && string.IsNullOrEmpty(data.CellVolumeStandardDeviation))
+            {
+                data.CellVolumeStandardDeviation = Regex.Replace(cellVolumeMatch.Groups[1].Value, @"\s+", " ").Trim();
+            }
+            
+            // Check for "Average Expansion Volume:" followed by "Standard Deviation:"
+            var expansionVolumeMatch = Regex.Match(lineText, @"Average\s+Expansion\s+Volume:.*?Standard\s+Deviation:\s*([^\s,]+(?:\s+[^\s,]+)*)", RegexOptions.IgnoreCase);
+            if (expansionVolumeMatch.Success && string.IsNullOrEmpty(data.ExpansionVolumeStandardDeviation))
+            {
+                data.ExpansionVolumeStandardDeviation = Regex.Replace(expansionVolumeMatch.Groups[1].Value, @"\s+", " ").Trim();
             }
         }
 

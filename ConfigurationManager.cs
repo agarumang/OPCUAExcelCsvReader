@@ -50,8 +50,9 @@ namespace ConsoleApp1
         public string ZeroCellVolume_CycleRow9 { get; set; } = "";
         public string ZeroCellVolume_CycleRow10 { get; set; } = "";
         public string ZeroCellVolume_AverageOffset { get; set; } = "";
-        public string ZeroCellVolume_StandardDeviation { get; set; } = "";
+        public string ZeroCellVolume_OffsetStandardDeviation { get; set; } = "";
         public string ZeroCellVolume_AverageCellVolume { get; set; } = "";
+        public string ZeroCellVolume_CellVolumeStandardDeviation { get; set; } = "";
         
         // Volume Calibration mappings
         public string VolumeCalibration_ChamberInsert { get; set; } = "";
@@ -76,10 +77,13 @@ namespace ConsoleApp1
         public string VolumeCalibration_CycleRow9 { get; set; } = "";
         public string VolumeCalibration_CycleRow10 { get; set; } = "";
         public string VolumeCalibration_AverageOffset { get; set; } = "";
-        public string VolumeCalibration_StandardDeviation { get; set; } = "";
+        public string VolumeCalibration_OffsetStandardDeviation { get; set; } = "";
         public string VolumeCalibration_AverageScaleFactor { get; set; } = "";
+        public string VolumeCalibration_ScaleFactorStandardDeviation { get; set; } = "";
         public string VolumeCalibration_AverageCellVolume { get; set; } = "";
+        public string VolumeCalibration_CellVolumeStandardDeviation { get; set; } = "";
         public string VolumeCalibration_AverageExpansionVolume { get; set; } = "";
+        public string VolumeCalibration_ExpansionVolumeStandardDeviation { get; set; } = "";
     }
 
     public class ApplicationSettings
